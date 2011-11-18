@@ -12,7 +12,7 @@ SLOT="0"
 LICENSE="GPLv2"
 
 KEYWORDS="~x86 ~amd64 ~arm"
-IUSE="-maemo-gtk"
+IUSE=""
 
 EGIT_REPO_URI="git://gitorious.org/hildon/hildon.git"
 EGIT_SOURCEDIR="${S}"
@@ -21,6 +21,7 @@ RDEPEND="x11-libs/libX11
 	x11-libs/libXext
 	x11-libs/libXt
 	sys-apps/dbus[X]
+	x11-libs/maemo-gtk+
 	dev-util/gtk-doc
 	dev-vcs/git"
 

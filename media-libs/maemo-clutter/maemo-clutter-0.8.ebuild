@@ -12,7 +12,7 @@ SLOT="0"
 LICENSE="GPLv2"
 
 KEYWORDS="~x86 ~amd64 ~arm"
-IUSE="-maemo-gtk"
+IUSE=""
 
 EGIT_REPO_URI="git://gitorious.org/fremantle-hildon-desktop/clutter_0_8.git"
 EGIT_SOURCEDIR="${S}"
