@@ -21,7 +21,6 @@ RDEPEND="x11-libs/libX11
 	x11-libs/libXext
 	x11-libs/libXt
 	sys-apps/dbus[X]
-	x11-libs/maemo-gtk+
 	dev-util/gtk-doc
 	dev-vcs/git"
 

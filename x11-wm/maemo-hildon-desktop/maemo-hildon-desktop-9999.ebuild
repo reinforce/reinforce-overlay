@@ -21,7 +21,7 @@ RDEPEND="x11-libs/libX11
 	x11-libs/libXext
 	x11-libs/libXt
 	media-libs/maemo-clutter
-	x11-libs/maemo-gtk+
+	x11-libs/gtk+
 	x11-libs/maemo-hildon
 	x11-libs/maemo-libhildondesktop
 	x11-libs/maemo-libmatchbox2

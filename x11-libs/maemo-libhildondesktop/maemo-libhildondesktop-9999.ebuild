@@ -22,7 +22,7 @@ RDEPEND="x11-libs/libX11
 	x11-libs/libXext
 	x11-libs/libXt
 	x11-libs/maemo-hildon
-	x11-libs/maemo-gtk+
+	x11-libs/gtk+
 	dev-util/gtk-doc
 	sys-apps/dbus[X]
 	dev-vcs/git"
