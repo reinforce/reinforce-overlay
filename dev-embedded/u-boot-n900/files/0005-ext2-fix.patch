@@ -1,0 +1,18 @@
+diff --git a/drivers/mmc/omap3_mmc.c b/drivers/mmc/omap3_mmc.c
+index 9506cca..c5aaa6d 100644
+--- a/drivers/mmc/omap3_mmc.c
++++ b/drivers/mmc/omap3_mmc.c
+@@ -544,9 +544,10 @@ unsigned char configure_mmc(mmc_card_data *mmc_card_cur)
+ unsigned long mmc_bread(int dev_num, unsigned long blknr, lbaint_t blkcnt,
+			void *dst)
+ {
+-	omap_mmc_read_sect(blknr, (blkcnt * MMCSD_SECTOR_SIZE), &cur_card_data,
+-				(unsigned long *) dst);
+-	return 1;
++	if(omap_mmc_read_sect(blknr, (blkcnt * MMCSD_SECTOR_SIZE), &cur_card_data,
++				(unsigned long *) dst) != 1)
++		return 0;
++	return blkcnt;
+ }
+ 
+ int mmc_legacy_init(int dev)
