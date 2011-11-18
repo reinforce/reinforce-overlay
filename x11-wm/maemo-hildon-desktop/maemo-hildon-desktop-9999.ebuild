@@ -20,10 +20,11 @@ EGIT_SOURCEDIR="${S}"
 RDEPEND="x11-libs/libX11
 	x11-libs/libXext
 	x11-libs/libXt
-	media-libs/clutter
-	x11-libs/hildon
-	x11-libs/libhildondesktop
-	x11-libs/libmatchbox2
+	media-libs/maemo-clutter
+	x11-libs/maemo-gtk+
+	x11-libs/maemo-hildon
+	x11-libs/maemo-libhildondesktop
+	x11-libs/maemo-libmatchbox2
 	sys-apps/dbus[X]
 	dev-vcs/git"
 

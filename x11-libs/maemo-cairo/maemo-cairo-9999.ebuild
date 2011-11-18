@@ -5,8 +5,8 @@
 EAPI="3"
 inherit eutils git-2 autotools
 
-DESCRIPTION="libmatchbox2 contains most of the window manager code and is usually statically linked to hildon-desktop."
-HOMEPAGE="http://maemo.gitorious.org/fremantle-hildon-desktop/libmatchbox2"
+DESCRIPTION="Cairo rendering library for maemo"
+HOMEPAGE="http://maemo.gitorious.org/hildon/cairo"
 
 SLOT="0"
 LICENSE="GPLv2"
@@ -14,15 +14,12 @@ LICENSE="GPLv2"
 KEYWORDS="~x86 ~amd64 ~arm"
 IUSE=""
 
-EGIT_REPO_URI="git://gitorious.org/fremantle-hildon-desktop/libmatchbox2.git"
+EGIT_REPO_URI="git://gitorious.org/hildon/cairo.git"
 EGIT_SOURCEDIR="${S}"
 
 RDEPEND="x11-libs/libX11
 	x11-libs/libXext
 	x11-libs/libXt
-	sys-apps/dbus[X]
-	dev-util/gtk-doc
-	=media-libs/libpng-1.2.46
 	dev-vcs/git"
 
 DEPEND="${RDEPEND}"
