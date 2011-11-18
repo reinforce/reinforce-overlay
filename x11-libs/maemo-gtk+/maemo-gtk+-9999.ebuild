@@ -20,9 +20,6 @@ EGIT_SOURCEDIR="${S}"
 RDEPEND="x11-libs/libX11
 	x11-libs/libXext
 	x11-libs/libXt
-	x11-libs/maemo-cairo
-	x11-libs/maemo-pango
-	dev-libs/maemo-atk
 	dev-vcs/git"
 
 DEPEND="${RDEPEND}"
