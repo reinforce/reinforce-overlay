@@ -5,8 +5,8 @@
 EAPI="3"
 inherit eutils git-2 autotools
 
-DESCRIPTION="libhildondesktop utilities library, common to hildon-desktop, hildon-home, hildon-status-menu"
-HOMEPAGE="http://maemo.gitorious.org/fremantle-hildon-desktop/libhildondesktop"
+DESCRIPTION="Hildon Desktop is the primary UI component of Hildon"
+HOMEPAGE="https://gitorious.org/cordia"
 
 SLOT="0"
 LICENSE="GPLv2"
@@ -14,18 +14,16 @@ LICENSE="GPLv2"
 KEYWORDS="~x86 ~amd64 ~arm"
 IUSE=""
 
-EGIT_REPO_URI="git://gitorious.org/fremantle-hildon-desktop/libhildondesktop.git"
+EGIT_REPO_URI="git://gitorious.org/cordia/hildon-desktop.git"
 EGIT_SOURCEDIR="${S}"
-
 
 RDEPEND="x11-libs/libX11
 	x11-libs/libXext
 	x11-libs/libXt
-	x11-libs/maemo-hildon
 	x11-libs/gtk+
-	dev-util/gtk-doc
-	sys-apps/dbus[X]
-	dev-vcs/git"
+	x11-libs/libhildonfm
+	x11-libs/libmatchbox2
+	media-libs/clutter"
 
 DEPEND="${RDEPEND}"
 

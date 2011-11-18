@@ -5,8 +5,8 @@
 EAPI="3"
 inherit eutils git-2 autotools
 
-DESCRIPTION="Clutter version used in Fremantle"
-HOMEPAGE="http://maemo.gitorious.org/fremantle-hildon-desktop/clutter_0_8"
+DESCRIPTION="The hildonfm library"
+HOMEPAGE="https://gitorious.org/cordia"
 
 SLOT="0"
 LICENSE="GPLv2"
@@ -14,15 +14,12 @@ LICENSE="GPLv2"
 KEYWORDS="~x86 ~amd64 ~arm"
 IUSE=""
 
-EGIT_REPO_URI="git://gitorious.org/fremantle-hildon-desktop/clutter_0_8.git"
+EGIT_REPO_URI="git://gitorious.org/cordia/libhildonfm.git"
 EGIT_SOURCEDIR="${S}"
 
 RDEPEND="x11-libs/libX11
 	x11-libs/libXext
-	x11-libs/libXt
-	sys-apps/dbus[X]
-	dev-util/gtk-doc
-	dev-vcs/git"
+	x11-libs/libXt"
 
 DEPEND="${RDEPEND}"
 
