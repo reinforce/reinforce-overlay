@@ -21,6 +21,9 @@ EGIT_SOURCEDIR="${S}"
 RDEPEND="x11-libs/libX11
 	x11-libs/libXext
 	x11-libs/libXt
+	x11-libs/maemo-hildon
+	x11-libs/maemo-gtk+
+	dev-util/gtk-doc
 	sys-apps/dbus[X]
 	dev-vcs/git"
 
