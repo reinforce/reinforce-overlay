@@ -31,4 +31,7 @@ src_unpack() {
 src_configure() {
 	eqmake4 iview.pro
 }
-
+src_install() {
+	into /usr
+	dobin iview || die
+}
