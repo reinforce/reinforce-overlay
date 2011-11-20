@@ -5,7 +5,7 @@
 EAPI="3"
 inherit eutils cmake-utils mercurial
 
-DESCRIPTION="Mail libs for Shiokaze Desktop Environment"
+DESCRIPTION="Main libs for Shiokaze Desktop Environment"
 HOMEPAGE="http://code.google.com/p/shiokaze/"
 
 SLOT="0"
