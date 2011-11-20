@@ -7,6 +7,7 @@ inherit eutils git-2 qt4-r2
 
 DESCRIPTION="A tiny document viewer written in Qt."
 HOMEPAGE="https://github.com/bazhenovc/iview"
+SRC_URI=""
 
 SLOT="0"
 LICENSE="GPL-3"
@@ -14,20 +15,20 @@ LICENSE="GPL-3"
 KEYWORDS="~x86 ~amd64 ~arm"
 IUSE=""
 
+S="${WORKDIR}/${MY_PN}"
 EGIT_REPO_URI="https://github.com/bazhenovc/iview.git"
 EGIT_SOURCEDIR="${S}"
 
-RDEPEND="x11-libs/libX11
-	x11-libs/libXext
-	x11-libs/libXt"
-
-DEPEND="${RDEPEND}
-	x11-libs/qt-core:4
+DEPEND="x11-libs/qt-core:4
 	x11-libs/qt-gui:4
-	app-text/poppler[qt4]
-	x11-proto/xextproto
-	x11-proto/xproto"
+	app-text/poppler[qt4]"
 
-src_configure() {
-	eqmake4 "${S}"/iview.pro
+RDEPEND="${DEPEND}"
+
+src_unpack() {
+	git-2_src_unpack
 }
+src_configure() {
+	eqmake4 iview.pro
+}
+
