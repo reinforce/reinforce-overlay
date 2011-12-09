@@ -29,7 +29,8 @@ RDEPEND="dev-cpp/gtest
 	dev-libs/libsigc++
 	sys-libs/libstdc++-v3
 	x11-libs/libwnck:3
-	x11-libs/utouch-geis"
+	x11-libs/utouch-geis
+	app-doc/doxygen"
 
 DEPEND="${RDEPEND}"
 
@@ -37,10 +38,6 @@ src_unpack() {
 	bzr_src_unpack 
 	cd "${S}"
 	epatch "${FILESDIR}"/add-nullptr-gcc4.5.patch
-}
-
-src_prepare() {
-	eautoreconf
 }
 
 src_install() {
