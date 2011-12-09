@@ -29,8 +29,7 @@ RDEPEND="dev-cpp/gtest
 	dev-libs/libsigc++
 	sys-libs/libstdc++-v3
 	x11-libs/libwnck:3
-	x11-libs/utouch-geis
-	app-doc/doxygen"
+	x11-libs/utouch-geis"
 
 DEPEND="${RDEPEND}"
 
@@ -41,7 +40,13 @@ src_unpack() {
 }
 
 src_prepare() {
-	eautoreconf
+	./autogen.sh --disable-doxygen-doc --disable-doxygen-dot --disable-doxygen-html > /dev/null &2>1
+	# Some bug...
+	#eautoreconf
+}
+
+src_configure() {
+	econf --disable-doxygen-doc --disable-doxygen-dot --disable-doxygen-html
 }
 
 src_install() {
