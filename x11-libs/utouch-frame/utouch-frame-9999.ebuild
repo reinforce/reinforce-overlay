@@ -11,7 +11,7 @@ HOMEPAGE="https://launchpad.net/utouch-frame"
 SLOT="0"
 LICENSE="GPLv3"
 
-KEYWORDS="~x86 ~amd64 ~arm"
+KEYWORDS=""
 IUSE=""
 
 EBZR_REPO_URI="lp:utouch-frame"
