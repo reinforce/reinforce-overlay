@@ -20,7 +20,8 @@ EBZR_PROJECT="utouch-geis"
 RDEPEND="sys-apps/dbus
 	x11-libs/libX11
 	x11-libs/libxcb
-	x11-libs/libXi"
+	x11-libs/libXi
+	x11-libs/utouch-grail"
 
 DEPEND="${RDEPEND}"
 
@@ -31,3 +32,8 @@ src_unpack() {
 src_prepare() {
 	eautoreconf
 }
+
+src_install() {
+	emake DESTDIR="${D}" install || die
+}
+

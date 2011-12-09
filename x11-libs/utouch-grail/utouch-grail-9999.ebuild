@@ -28,3 +28,8 @@ src_unpack() {
 src_prepare() {
 	eautoreconf
 }
+
+src_install() {
+	emake DESTDIR="${D}" install || die
+}
+

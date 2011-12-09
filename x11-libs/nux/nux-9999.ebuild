@@ -26,7 +26,8 @@ RDEPEND="media-libs/mesa
 	x11-libs/libXxf86vm
 	dev-libs/libsigc++
 	sys-libs/libstdc++-v3
-	x11-libs/libwnck:3"
+	x11-libs/libwnck:3
+	x11-libs/utouch-geis"
 
 DEPEND="${RDEPEND}"
 
@@ -36,5 +37,9 @@ src_unpack() {
 
 src_prepare() {
 	eautoreconf
+}
+
+src_install() {
+	emake DESTDIR="${D}" install || die
 }
 
