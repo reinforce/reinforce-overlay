@@ -24,7 +24,7 @@ RDEPEND="dev-util/cmake[qt4]
 	dev-libs/glib
 	x11-libs/gtk+:3
 	dev-libs/libindicator
-	x11-libs/libnux
+	x11-libs/nux
 	x11-libs/qt-core
 	x11-libs/qt-dbus
 	x11-libs/qt-opengl
