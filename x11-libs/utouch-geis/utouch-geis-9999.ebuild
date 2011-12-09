@@ -18,6 +18,7 @@ EBZR_REPO_URI="lp:utouch-geis"
 EBZR_PROJECT="utouch-geis"
 
 RDEPEND="sys-apps/dbus
+	>=dev-lang/python-2.7
 	x11-libs/libX11
 	x11-libs/libxcb
 	x11-libs/libXi
@@ -26,7 +27,9 @@ RDEPEND="sys-apps/dbus
 DEPEND="${RDEPEND}"
 
 src_unpack() { 
-	bzr_src_unpack 
+	bzr_src_unpack
+	cd "${S}"
+	sed -i "s/python >= 2.7/python-2.7/" configure.ac || die "sed failed"
 }
 
 src_prepare() {
