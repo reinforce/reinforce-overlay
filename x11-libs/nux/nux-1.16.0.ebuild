@@ -2,22 +2,19 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI="3"
-inherit bzr eutils autotools
+inherit base
 
-DESCRIPTION="Visual rendering toolkit for real-time applications - shared lib"
+DESCRIPTION="An OpenGL toolkit"
+SRC_URI="http://launchpad.net/nux/1.0/${PV}/+download/nux-${PV}.tar.gz"
 HOMEPAGE="https://launchpad.net/nux"
-
+KEYWORDS="~x86 ~amd64 ~arm"
 SLOT="0"
-LICENSE="GPLv3"
-
-KEYWORDS=""
+LICENSE="GPV-3"
 IUSE=""
 
-EBZR_REPO_URI="lp:nux"
-EBZR_PROJECT="nux"
-
-RDEPEND="dev-cpp/gtest
+RDEPEND=""
+DEPEND="${RDEPEND}
+	dev-cpp/gtest
 	dev-cpp/gmock
 	media-libs/mesa
 	media-libs/glew
@@ -28,22 +25,12 @@ RDEPEND="dev-cpp/gtest
 	x11-libs/libXxf86vm
 	dev-libs/libsigc++
 	sys-libs/libstdc++-v3
-	x11-libs/libwnck:3
-	x11-libs/utouch-geis"
+	x11-libs/libwnck
+	x11-libs/utouch-geis
+	x11-libs/utouch-evemu"
 
-DEPEND="${RDEPEND}"
-
-src_unpack() { 
-	bzr_src_unpack 
+src_unpack() {
+	unpack ${A}
 	cd "${S}"
 	epatch "${FILESDIR}"/add-nullptr-gcc4.5.patch
 }
-
-src_prepare() {
-	eautoreconf
-}
-
-src_install() {
-	emake DESTDIR="${D}" install || die
-}
-

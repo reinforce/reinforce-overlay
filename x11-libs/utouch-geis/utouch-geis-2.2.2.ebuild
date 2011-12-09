@@ -9,7 +9,7 @@ DESCRIPTION="An implementation of the GEIS (Gesture Engine Interface and
 Support) interface."
 SRC_URI="http://launchpad.net/utouch-geis/trunk/utouch-geis-${PV}/+download/utouch-geis-${PV}.tar.gz"
 HOMEPAGE="https://launchpad.net/utouch-geis"
-KEYWORDS="~x86 ~amd64 ~arm"
+KEYWORDS=""
 SLOT="0"
 LICENSE="GPL-2 LGPL-3"
 IUSE=""
@@ -19,5 +19,5 @@ DEPEND="${RDEPEND}
 	x11-libs/utouch-grail"
 
 src_prepare() {
-	sed -i 's/python >= 2.7/python-2.7 >= 2.7/g' configure.ac;
+	sed -i 's/python >= 2.7/python-2.7 >= 2.7/g' configure;
 }
