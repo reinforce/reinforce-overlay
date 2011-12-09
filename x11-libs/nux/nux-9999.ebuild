@@ -40,6 +40,10 @@ src_unpack() {
 	epatch "${FILESDIR}"/add-nullptr-gcc4.5.patch
 }
 
+src_prepare() {
+	eautoreconf
+}
+
 src_install() {
 	emake DESTDIR="${D}" install || die
 }
