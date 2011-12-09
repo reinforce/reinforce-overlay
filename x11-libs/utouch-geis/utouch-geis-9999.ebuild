@@ -22,7 +22,6 @@ RDEPEND="sys-apps/dbus
 	x11-libs/libX11
 	x11-libs/libxcb
 	x11-libs/libXi
-	x11-proto/inputproto[utouch]
 	x11-libs/utouch-grail"
 
 DEPEND="${RDEPEND}"
