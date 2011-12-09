@@ -17,7 +17,7 @@ IUSE=""
 EBZR_REPO_URI="lp:unity-2d"
 EBZR_PROJECT="unity-2d"
 
-RDEPEND="dev-util/cmake[qt4]
+RDEPEND="dev-util/cmake
 	x11-libs/cairo
 	gnome-base/dconf
 	x11-libs/gdk-pixbuf
