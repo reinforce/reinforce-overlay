@@ -2,34 +2,19 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI="3"
-inherit bzr eutils autotools
+inherit base
 
 DESCRIPTION="Gesture Recognition And Instantiation Library"
+SRC_URI="http://launchpad.net/utouch-grail/trunk/v${PV}/+download/utouch-grail-${PV}.tar.gz"
 HOMEPAGE="https://launchpad.net/utouch-grail"
-
-SLOT="0"
-LICENSE="GPLv3"
-
 KEYWORDS="~x86 ~amd64 ~arm"
+SLOT="0"
+LICENSE="GPV-3"
 IUSE=""
 
-EBZR_REPO_URI="lp:utouch-grail"
-EBZR_PROJECT="utouch-grail"
-
 RDEPEND=""
-
-DEPEND="${RDEPEND}"
-
-src_unpack() { 
-	bzr_src_unpack 
-}
-
-src_prepare() {
-	eautoreconf
-}
-
-src_install() {
-	emake DESTDIR="${D}" install || die
-}
+DEPEND="${RDEPEND}
+	x11-libs/mtdev
+	x11-libs/utouch-evemu
+	x11-libs/utouch-frame"
 

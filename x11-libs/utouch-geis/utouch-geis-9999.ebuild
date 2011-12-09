@@ -29,7 +29,7 @@ DEPEND="${RDEPEND}"
 src_unpack() { 
 	bzr_src_unpack
 	cd "${S}"
-	sed -i "s/python >= 2.7/python-2.7/" configure.ac || die "sed failed"
+	sed -i 's/python >= 2.7/python-2.7 >= 2.7/g' configure.ac || die "sed failed"
 }
 
 src_prepare() {
