@@ -26,6 +26,7 @@ RDEPEND="dev-util/cmake
 	dev-libs/libindicator
 	x11-libs/qt-declarative
 	x11-libs/gconf-qt
+	x11-libs/dconf-qt
 	x11-libs/nux
 	x11-libs/qt-core
 	x11-libs/qt-dbus

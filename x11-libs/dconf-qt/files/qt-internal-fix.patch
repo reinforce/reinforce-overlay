@@ -1,0 +1,748 @@
+--- a/lib/qconf.cpp	2011-07-22 19:35:06.000000000 +0400
++++ b/lib/qconf.cpp	2011-12-10 18:29:56.187936536 +0400
+@@ -19,6 +19,9 @@
+ #include "qconfschema.h"
+ #include "qconftypes.h"
+ 
++#define private public
++#include "qdbusconnection_p.h"
++
+ #include <dconf-dbus-1.h>
+ #include <QtDBus>
+ 
+@@ -65,8 +68,8 @@
+ {
+     if (dconfClient == NULL)
+         dconfClient = dconf_dbus_client_new(NULL,
+-                                            (DBusConnection *) QDBusConnection::sessionBus().internalPointer(),
+-                                            (DBusConnection *) QDBusConnection::systemBus().internalPointer());
++                                            (DBusConnection *) QDBusConnection::sessionBus().d->connection,
++                                            (DBusConnection *) QDBusConnection::systemBus().d->connection);
+ }
+ 
+ void QConf::setSchema(const QString& schema) {
+--- /dev/null	2011-12-08 14:00:21.159999965 +0400
++++ b/lib/qdbusconnection_p.h	2011-12-10 18:35:19.167934638 +0400
+@@ -0,0 +1,346 @@
++/****************************************************************************
++**
++** Copyright (C) 2011 Nokia Corporation and/or its subsidiary(-ies).
++** All rights reserved.
++** Contact: Nokia Corporation (qt-info@nokia.com)
++**
++** This file is part of the QtDBus module of the Qt Toolkit.
++**
++** $QT_BEGIN_LICENSE:LGPL$
++** GNU Lesser General Public License Usage
++** This file may be used under the terms of the GNU Lesser General Public
++** License version 2.1 as published by the Free Software Foundation and
++** appearing in the file LICENSE.LGPL included in the packaging of this
++** file. Please review the following information to ensure the GNU Lesser
++** General Public License version 2.1 requirements will be met:
++** http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html.
++**
++** In addition, as a special exception, Nokia gives you certain additional
++** rights. These rights are described in the Nokia Qt LGPL Exception
++** version 1.1, included in the file LGPL_EXCEPTION.txt in this package.
++**
++** GNU General Public License Usage
++** Alternatively, this file may be used under the terms of the GNU General
++** Public License version 3.0 as published by the Free Software Foundation
++** and appearing in the file LICENSE.GPL included in the packaging of this
++** file. Please review the following information to ensure the GNU General
++** Public License version 3.0 requirements will be met:
++** http://www.gnu.org/copyleft/gpl.html.
++**
++** Other Usage
++** Alternatively, this file may be used in accordance with the terms and
++** conditions contained in a signed written agreement between you and Nokia.
++**
++**
++**
++**
++**
++** $QT_END_LICENSE$
++**
++****************************************************************************/
++
++//
++//  W A R N I N G
++//  -------------
++//
++// This file is not part of the public API.  This header file may
++// change from version to version without notice, or even be
++// removed.
++//
++// We mean it.
++//
++//
++
++#ifndef QDBUSCONNECTION_P_H
++#define QDBUSCONNECTION_P_H
++
++#include <qdbuserror.h>
++#include <qdbusconnection.h>
++
++#include <QtCore/qatomic.h>
++#include <QtCore/qhash.h>
++#include <QtCore/qmutex.h>
++#include <QtCore/qobject.h>
++#include <QtCore/qpointer.h>
++#include <QtCore/qreadwritelock.h>
++#include <QtCore/qstringlist.h>
++#include <QtCore/qvarlengtharray.h>
++#include <QtCore/qvector.h>
++
++#include "qdbus_symbols_p.h"
++
++#include <qdbusmessage.h>
++
++#ifndef QT_NO_DBUS
++
++QT_BEGIN_NAMESPACE
++
++class QDBusMessage;
++class QSocketNotifier;
++class QTimerEvent;
++class QDBusObjectPrivate;
++class QDBusCallDeliveryEvent;
++class QDBusActivateObjectEvent;
++class QMetaMethod;
++class QDBusInterfacePrivate;
++struct QDBusMetaObject;
++class QDBusAbstractInterface;
++class QDBusConnectionInterface;
++class QDBusPendingCallPrivate;
++
++class QDBusErrorInternal
++{
++    mutable DBusError error;
++    Q_DISABLE_COPY(QDBusErrorInternal)
++public:
++    inline QDBusErrorInternal() { q_dbus_error_init(&error); }
++    inline ~QDBusErrorInternal() { q_dbus_error_free(&error); }
++    inline bool operator !() const { return !q_dbus_error_is_set(&error); }
++    inline operator DBusError *() { q_dbus_error_free(&error); return &error; }
++    inline operator QDBusError() const { QDBusError err(&error); q_dbus_error_free(&error); return err; }
++};
++
++// QDBusConnectionPrivate holds the DBusConnection and
++// can have many QDBusConnection objects referring to it
++
++class QDBusConnectionPrivate: public QObject
++{
++    Q_OBJECT
++public:
++    // structs and enums
++    enum ConnectionMode { InvalidMode, ServerMode, ClientMode, PeerMode }; // LocalMode
++
++    struct Watcher
++    {
++        Watcher(): watch(0), read(0), write(0) {}
++        DBusWatch *watch;
++        QSocketNotifier *read;
++        QSocketNotifier *write;
++    };
++
++    struct SignalHook
++    {
++        inline SignalHook() : obj(0), midx(-1) { }
++        QString service, path, signature;
++        QObject* obj;
++        int midx;
++        QList<int> params;
++        QStringList argumentMatch;
++        QByteArray matchRule;
++    };
++
++    struct ObjectTreeNode
++    {
++        typedef QVector<ObjectTreeNode> DataList;
++
++        inline ObjectTreeNode() : obj(0), flags(0) { }
++        inline ObjectTreeNode(const QString &n) // intentionally implicit
++            : name(n), obj(0), flags(0) { }
++        inline ~ObjectTreeNode() { }
++        inline bool operator<(const QString &other) const
++            { return name < other; }
++        inline bool operator<(const QStringRef &other) const
++            { return QStringRef(&name) < other; }
++
++        QString name;
++        QObject* obj;
++        int flags;
++        DataList children;
++    };
++
++public:
++    // typedefs
++    typedef QMultiHash<int, Watcher> WatcherHash;
++    typedef QHash<int, DBusTimeout *> TimeoutHash;
++    typedef QList<QPair<DBusTimeout *, int> > PendingTimeoutList;
++
++    typedef QMultiHash<QString, SignalHook> SignalHookHash;
++    typedef QHash<QString, QDBusMetaObject* > MetaObjectHash;
++    typedef QHash<QByteArray, int> MatchRefCountHash;
++
++    struct WatchedServiceData {
++        WatchedServiceData() : refcount(0) {}
++        WatchedServiceData(const QString &owner, int refcount = 0)
++            : owner(owner), refcount(refcount)
++        {}
++        QString owner;
++        int refcount;
++    };
++    typedef QHash<QString, WatchedServiceData> WatchedServicesHash;
++
++public:
++    // public methods are entry points from other objects
++    explicit QDBusConnectionPrivate(QObject *parent = 0);
++    ~QDBusConnectionPrivate();
++    void deleteYourself();
++
++    void setBusService(const QDBusConnection &connection);
++    void setPeer(DBusConnection *connection, const QDBusErrorInternal &error);
++    void setConnection(DBusConnection *connection, const QDBusErrorInternal &error);
++    void setServer(DBusServer *server, const QDBusErrorInternal &error);
++    void closeConnection();
++
++    QString getNameOwner(const QString &service);
++
++    int send(const QDBusMessage &message);
++    QDBusMessage sendWithReply(const QDBusMessage &message, int mode, int timeout = -1);
++    QDBusMessage sendWithReplyLocal(const QDBusMessage &message);
++    QDBusPendingCallPrivate *sendWithReplyAsync(const QDBusMessage &message, int timeout = -1);
++    int sendWithReplyAsync(const QDBusMessage &message, QObject *receiver,
++                           const char *returnMethod, const char *errorMethod, int timeout = -1);
++    bool connectSignal(const QString &service, const QString &path, const QString& interface,
++                       const QString &name, const QStringList &argumentMatch, const QString &signature,
++                       QObject *receiver, const char *slot);
++    void connectSignal(const QString &key, const SignalHook &hook);
++    SignalHookHash::Iterator disconnectSignal(SignalHookHash::Iterator &it);
++    bool disconnectSignal(const QString &service, const QString &path, const QString& interface,
++                          const QString &name, const QStringList &argumentMatch, const QString &signature,
++                          QObject *receiver, const char *slot);
++    void registerObject(const ObjectTreeNode *node);
++    void connectRelay(const QString &service,
++                      const QString &path, const QString &interface,
++                      QDBusAbstractInterface *receiver, const char *signal);
++    void disconnectRelay(const QString &service,
++                         const QString &path, const QString &interface,
++                         QDBusAbstractInterface *receiver, const char *signal);
++    void registerService(const QString &serviceName);
++    void unregisterService(const QString &serviceName);
++
++    bool handleMessage(const QDBusMessage &msg);
++    void waitForFinished(QDBusPendingCallPrivate *pcall);
++
++    QDBusMetaObject *findMetaObject(const QString &service, const QString &path,
++                                    const QString &interface, QDBusError &error);
++
++    void postEventToThread(int action, QObject *target, QEvent *event);
++
++    inline void serverConnection(const QDBusConnection &connection)
++        { emit newServerConnection(connection); }
++    
++private:
++    void checkThread();
++    bool handleError(const QDBusErrorInternal &error);
++
++    void handleSignal(const QString &key, const QDBusMessage &msg);
++    void handleSignal(const QDBusMessage &msg);
++    void handleObjectCall(const QDBusMessage &message);
++
++    void activateSignal(const SignalHook& hook, const QDBusMessage &msg);
++    void activateObject(ObjectTreeNode &node, const QDBusMessage &msg, int pathStartPos);
++    bool activateInternalFilters(const ObjectTreeNode &node, const QDBusMessage &msg);
++    bool activateCall(QObject *object, int flags, const QDBusMessage &msg);
++
++    void sendError(const QDBusMessage &msg, QDBusError::ErrorType code);
++    void deliverCall(QObject *object, int flags, const QDBusMessage &msg,
++                     const QList<int> &metaTypes, int slotIdx);
++
++    bool isServiceRegisteredByThread(const QString &serviceName) const;
++
++    QString getNameOwnerNoCache(const QString &service);
++
++protected:
++    void customEvent(QEvent *e);
++    void timerEvent(QTimerEvent *e);
++
++public slots:
++    // public slots
++    void doDispatch();
++    void socketRead(int);
++    void socketWrite(int);
++    void objectDestroyed(QObject *o);
++    void relaySignal(QObject *obj, const QMetaObject *, int signalId, const QVariantList &args);
++
++private slots:
++    void serviceOwnerChangedNoLock(const QString &name, const QString &oldOwner, const QString &newOwner);
++    void registerServiceNoLock(const QString &serviceName);
++    void unregisterServiceNoLock(const QString &serviceName);
++
++signals:
++    void serviceOwnerChanged(const QString &name, const QString &oldOwner, const QString &newOwner);
++    void callWithCallbackFailed(const QDBusError &error, const QDBusMessage &message);
++    void newServerConnection(const QDBusConnection &connection);
++
++public:
++    QAtomicInt ref;
++    QString name;               // this connection's name
++    QString baseService;        // this connection's base service
++
++    ConnectionMode mode;
++
++    // members accessed in unlocked mode (except for deletion)
++    // connection and server provide their own locking mechanisms
++    // busService doesn't have state to be changed
++    DBusConnection *connection;
++    DBusServer *server;
++    QDBusConnectionInterface *busService;
++
++    // watchers and timeouts are accessed from any thread
++    // but the corresponding timer and QSocketNotifier must be handled
++    // only in the object's thread
++    QMutex watchAndTimeoutLock;
++    WatcherHash watchers;
++    TimeoutHash timeouts;
++    PendingTimeoutList timeoutsPendingAdd;
++
++    // members accessed through a lock
++    QMutex dispatchLock;
++    QReadWriteLock lock;
++    QDBusError lastError;
++
++    QStringList serviceNames;
++    WatchedServicesHash watchedServices;
++    SignalHookHash signalHooks;
++    MatchRefCountHash matchRefCounts;
++    ObjectTreeNode rootNode;
++    MetaObjectHash cachedMetaObjects;
++
++    QMutex callDeliveryMutex;
++    QDBusCallDeliveryEvent *callDeliveryState; // protected by the callDeliveryMutex mutex
++
++public:
++    // static methods
++    static int findSlot(QObject *obj, const QByteArray &normalizedName, QList<int>& params);
++    static bool prepareHook(QDBusConnectionPrivate::SignalHook &hook, QString &key,
++                            const QString &service,
++                            const QString &path, const QString &interface, const QString &name,
++                            const QStringList &argMatch,
++                            QObject *receiver, const char *signal, int minMIdx,
++                            bool buildSignature);
++    static DBusHandlerResult messageFilter(DBusConnection *, DBusMessage *, void *);
++    static bool checkReplyForDelivery(QDBusConnectionPrivate *target, QObject *object,
++                                      int idx, const QList<int> &metaTypes,
++                                      const QDBusMessage &msg);
++    static QDBusCallDeliveryEvent *prepareReply(QDBusConnectionPrivate *target, QObject *object,
++                                                int idx, const QList<int> &metaTypes,
++                                                const QDBusMessage &msg);
++    static void processFinishedCall(QDBusPendingCallPrivate *call);
++
++    static QDBusConnectionPrivate *d(const QDBusConnection& q) { return q.d; }
++    static QDBusConnection q(QDBusConnectionPrivate *connection) { return QDBusConnection(connection); }
++
++    static void setSender(const QDBusConnectionPrivate *s);
++
++    friend class QDBusActivateObjectEvent;
++    friend class QDBusCallDeliveryEvent;
++};
++
++// in qdbusmisc.cpp
++extern int qDBusParametersForMethod(const QMetaMethod &mm, QList<int>& metaTypes);
++extern int qDBusNameToTypeId(const char *name);
++extern bool qDBusCheckAsyncTag(const char *tag);
++extern bool qDBusInterfaceInObject(QObject *obj, const QString &interface_name);
++extern QString qDBusInterfaceFromMetaObject(const QMetaObject *mo);
++
++// in qdbusinternalfilters.cpp
++extern QString qDBusIntrospectObject(const QDBusConnectionPrivate::ObjectTreeNode &node);
++extern QDBusMessage qDBusPropertyGet(const QDBusConnectionPrivate::ObjectTreeNode &node,
++                                     const QDBusMessage &msg);
++extern QDBusMessage qDBusPropertySet(const QDBusConnectionPrivate::ObjectTreeNode &node,
++                                     const QDBusMessage &msg);
++extern QDBusMessage qDBusPropertyGetAll(const QDBusConnectionPrivate::ObjectTreeNode &node,
++                                        const QDBusMessage &msg);
++
++QT_END_NAMESPACE
++
++#endif // QT_NO_DBUS
++#endif
+--- /dev/null	2011-12-08 14:00:21.159999965 +0400
++++ b/lib/qdbus_symbols_p.h	2011-12-10 18:34:57.697934764 +0400
+@@ -0,0 +1,373 @@
++/****************************************************************************
++**
++** Copyright (C) 2011 Nokia Corporation and/or its subsidiary(-ies).
++** All rights reserved.
++** Contact: Nokia Corporation (qt-info@nokia.com)
++**
++** This file is part of the QtDBus module of the Qt Toolkit.
++**
++** $QT_BEGIN_LICENSE:LGPL$
++** GNU Lesser General Public License Usage
++** This file may be used under the terms of the GNU Lesser General Public
++** License version 2.1 as published by the Free Software Foundation and
++** appearing in the file LICENSE.LGPL included in the packaging of this
++** file. Please review the following information to ensure the GNU Lesser
++** General Public License version 2.1 requirements will be met:
++** http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html.
++**
++** In addition, as a special exception, Nokia gives you certain additional
++** rights. These rights are described in the Nokia Qt LGPL Exception
++** version 1.1, included in the file LGPL_EXCEPTION.txt in this package.
++**
++** GNU General Public License Usage
++** Alternatively, this file may be used under the terms of the GNU General
++** Public License version 3.0 as published by the Free Software Foundation
++** and appearing in the file LICENSE.GPL included in the packaging of this
++** file. Please review the following information to ensure the GNU General
++** Public License version 3.0 requirements will be met:
++** http://www.gnu.org/copyleft/gpl.html.
++**
++** Other Usage
++** Alternatively, this file may be used in accordance with the terms and
++** conditions contained in a signed written agreement between you and Nokia.
++**
++**
++**
++**
++**
++** $QT_END_LICENSE$
++**
++****************************************************************************/
++
++//
++//  W A R N I N G
++//  -------------
++//
++// This file is not part of the public API.  This header file may
++// change from version to version without notice, or even be
++// removed.
++//
++// We mean it.
++//
++//
++
++#ifndef QDBUS_SYMBOLS_P_H
++#define QDBUS_SYMBOLS_P_H
++
++#include <QtCore/qglobal.h>
++#include <dbus/dbus.h>
++
++#ifndef QT_NO_DBUS
++
++QT_BEGIN_NAMESPACE
++
++#if !defined QT_LINKED_LIBDBUS
++
++void *qdbus_resolve_conditionally(const char *name); // doesn't print a warning
++void *qdbus_resolve_me(const char *name); // prints a warning
++bool qdbus_loadLibDBus();
++
++# define DEFINEFUNC(ret, func, args, argcall, funcret)          \
++    typedef ret (* _q_PTR_##func) args;                         \
++    static inline ret q_##func args                             \
++    {                                                           \
++        static _q_PTR_##func ptr;                               \
++        if (!ptr)                                               \
++            ptr = (_q_PTR_##func) qdbus_resolve_me(#func);      \
++        funcret ptr argcall;                                    \
++    }
++
++#else // defined QT_LINKED_LIBDBUS
++
++inline bool qdbus_loadLibDBus() { return true; }
++
++# define DEFINEFUNC(ret, func, args, argcall, funcret) \
++    static inline ret q_##func args { funcret func argcall; }
++
++#endif // defined QT_LINKED_LIBDBUS
++
++/* dbus-bus.h */
++DEFINEFUNC(void, dbus_bus_add_match, (DBusConnection *connection,
++                                      const char     *rule,
++                                      DBusError      *error),
++           (connection, rule, error), )
++DEFINEFUNC(void, dbus_bus_remove_match, (DBusConnection *connection,
++                                         const char     *rule,
++                                         DBusError      *error),
++           (connection, rule, error), )
++DEFINEFUNC(dbus_bool_t, dbus_bus_register,(DBusConnection *connection,
++                                           DBusError      *error),
++           (connection, error), return)
++DEFINEFUNC(DBusConnection *, dbus_bus_get_private, (DBusBusType     type,
++                                                    DBusError      *error),
++           (type, error), return)
++DEFINEFUNC(const char*, dbus_bus_get_unique_name, (DBusConnection *connection),
++           (connection), return)
++
++/* dbus-connection.h */
++DEFINEFUNC(dbus_bool_t        , dbus_connection_add_filter, (DBusConnection            *connection,
++                                                             DBusHandleMessageFunction  function,
++                                                             void                      *user_data,
++                                                             DBusFreeFunction           free_data_function),
++           (connection, function, user_data, free_data_function), return)
++DEFINEFUNC(void               , dbus_connection_close,      (DBusConnection             *connection),
++           (connection), return)
++DEFINEFUNC(DBusDispatchStatus , dbus_connection_dispatch,   (DBusConnection             *connection),
++           (connection), return)
++DEFINEFUNC(DBusDispatchStatus , dbus_connection_get_dispatch_status, (DBusConnection             *connection),
++           (connection), return)
++DEFINEFUNC(dbus_bool_t        , dbus_connection_get_is_connected, (DBusConnection             *connection),
++           (connection), return)
++DEFINEFUNC(DBusConnection*    , dbus_connection_open_private, (const char                 *address,
++                                                               DBusError                  *error),
++           (address, error), return)
++DEFINEFUNC(DBusConnection*    , dbus_connection_ref,          (DBusConnection             *connection),
++           (connection), return)
++DEFINEFUNC(dbus_bool_t        , dbus_connection_send,         (DBusConnection             *connection,
++                                                               DBusMessage                *message,
++                                                               dbus_uint32_t              *client_serial),
++           (connection, message, client_serial), return)
++DEFINEFUNC(dbus_bool_t        , dbus_connection_send_with_reply, (DBusConnection             *connection,
++                                                                  DBusMessage                *message,
++                                                                  DBusPendingCall           **pending_return,
++                                                                  int                         timeout_milliseconds),
++           (connection, message, pending_return, timeout_milliseconds), return)
++DEFINEFUNC(DBusMessage *      , dbus_connection_send_with_reply_and_block, (DBusConnection             *connection,
++                                                                            DBusMessage                *message,
++                                                                            int                         timeout_milliseconds,
++                                                                            DBusError                  *error),
++           (connection, message, timeout_milliseconds, error), return)
++DEFINEFUNC(void               , dbus_connection_set_exit_on_disconnect, (DBusConnection             *connection,
++                                                                         dbus_bool_t                 exit_on_disconnect),
++           (connection, exit_on_disconnect), )
++DEFINEFUNC(dbus_bool_t        , dbus_connection_set_timeout_functions, (DBusConnection             *connection,
++                                                                        DBusAddTimeoutFunction      add_function,
++                                                                        DBusRemoveTimeoutFunction   remove_function,
++                                                                        DBusTimeoutToggledFunction  toggled_function,
++                                                                        void                       *data,
++                                                                        DBusFreeFunction            free_data_function),
++           (connection, add_function, remove_function, toggled_function, data, free_data_function), return)
++DEFINEFUNC(dbus_bool_t        , dbus_connection_set_watch_functions, (DBusConnection             *connection,
++                                                                      DBusAddWatchFunction        add_function,
++                                                                      DBusRemoveWatchFunction     remove_function,
++                                                                      DBusWatchToggledFunction    toggled_function,
++                                                                      void                       *data,
++                                                                      DBusFreeFunction            free_data_function),
++           (connection, add_function, remove_function, toggled_function, data, free_data_function), return)
++DEFINEFUNC(void              , dbus_connection_set_wakeup_main_function, (DBusConnection             *connection,
++                                                                          DBusWakeupMainFunction      wakeup_main_function,
++                                                                          void                       *data,
++                                                                          DBusFreeFunction            free_data_function),
++           (connection, wakeup_main_function, data, free_data_function), )
++DEFINEFUNC(void              , dbus_connection_set_dispatch_status_function, (DBusConnection             *connection,
++                                                                              DBusDispatchStatusFunction  function,
++                                                                              void                       *data,
++                                                                              DBusFreeFunction            free_data_function),
++           (connection, function, data, free_data_function), )
++
++DEFINEFUNC(void               , dbus_connection_unref, (DBusConnection             *connection),
++           (connection), )
++DEFINEFUNC(dbus_bool_t , dbus_timeout_get_enabled, (DBusTimeout      *timeout),
++           (timeout), return)
++DEFINEFUNC(int         , dbus_timeout_get_interval, (DBusTimeout      *timeout),
++           (timeout), return)
++DEFINEFUNC(dbus_bool_t , dbus_timeout_handle, (DBusTimeout      *timeout),
++           (timeout), return)
++
++DEFINEFUNC(dbus_bool_t  , dbus_watch_get_enabled, (DBusWatch        *watch),
++           (watch), return)
++DEFINEFUNC(int , dbus_watch_get_fd, (DBusWatch        *watch),
++           (watch), return)
++DEFINEFUNC(unsigned int , dbus_watch_get_flags, (DBusWatch        *watch),
++           (watch), return)
++DEFINEFUNC(dbus_bool_t  , dbus_watch_handle, (DBusWatch        *watch,
++                                              unsigned int      flags),
++           (watch, flags), return)
++
++/* dbus-errors.h */
++DEFINEFUNC(void        , dbus_error_free, (DBusError       *error),
++           (error), )
++DEFINEFUNC(void        , dbus_error_init, (DBusError       *error),
++           (error), )
++DEFINEFUNC(dbus_bool_t , dbus_error_is_set, (const DBusError *error),
++           (error), return)
++
++/* dbus-memory.h */
++DEFINEFUNC(void  , dbus_free, (void  *memory), (memory), )
++
++/* dbus-message.h */
++DEFINEFUNC(DBusMessage* , dbus_message_copy, (const DBusMessage *message),
++           (message), return)
++DEFINEFUNC(dbus_bool_t   , dbus_message_get_auto_start, (DBusMessage   *message),
++           (message), return)
++DEFINEFUNC(const char*   , dbus_message_get_error_name, (DBusMessage   *message),
++           (message), return)
++DEFINEFUNC(const char*   , dbus_message_get_interface, (DBusMessage   *message),
++           (message), return)
++DEFINEFUNC(const char*   , dbus_message_get_member, (DBusMessage   *message),
++           (message), return)
++DEFINEFUNC(dbus_bool_t   , dbus_message_get_no_reply, (DBusMessage   *message),
++           (message), return)
++DEFINEFUNC(const char*   , dbus_message_get_path, (DBusMessage   *message),
++           (message), return)
++DEFINEFUNC(const char*   , dbus_message_get_sender, (DBusMessage   *message),
++           (message), return)
++DEFINEFUNC(dbus_uint32_t , dbus_message_get_serial, (DBusMessage   *message),
++           (message), return)
++DEFINEFUNC(const char*   , dbus_message_get_signature, (DBusMessage   *message),
++           (message), return)
++DEFINEFUNC(int           , dbus_message_get_type, (DBusMessage   *message),
++           (message), return)
++DEFINEFUNC(dbus_bool_t , dbus_message_iter_append_basic, (DBusMessageIter *iter,
++                                                          int              type,
++                                                          const void      *value),
++           (iter, type, value), return)
++DEFINEFUNC(dbus_bool_t , dbus_message_iter_append_fixed_array, (DBusMessageIter *iter,
++                                                                int              element_type,
++                                                                const void      *value,
++                                                                int              n_elements),
++           (iter, element_type, value, n_elements), return)
++DEFINEFUNC(dbus_bool_t , dbus_message_iter_close_container, (DBusMessageIter *iter,
++                                                             DBusMessageIter *sub),
++           (iter, sub), return)
++DEFINEFUNC(int         , dbus_message_iter_get_arg_type, (DBusMessageIter *iter),
++           (iter), return)
++DEFINEFUNC(void        , dbus_message_iter_get_basic, (DBusMessageIter *iter,
++                                                       void            *value),
++           (iter, value), )
++DEFINEFUNC(int         , dbus_message_iter_get_element_type, (DBusMessageIter *iter),
++           (iter), return)
++DEFINEFUNC(void        , dbus_message_iter_get_fixed_array, (DBusMessageIter *iter,
++                                                             void            *value,
++                                                             int             *n_elements),
++           (iter, value, n_elements), return)
++DEFINEFUNC(char*       , dbus_message_iter_get_signature, (DBusMessageIter *iter),
++           (iter), return)
++DEFINEFUNC(dbus_bool_t , dbus_message_iter_init, (DBusMessage     *message,
++                                                  DBusMessageIter *iter),
++           (message, iter), return)
++DEFINEFUNC(void        , dbus_message_iter_init_append, (DBusMessage     *message,
++                                                         DBusMessageIter *iter),
++           (message, iter), return)
++DEFINEFUNC(dbus_bool_t , dbus_message_iter_next, (DBusMessageIter *iter),
++           (iter), return)
++DEFINEFUNC(dbus_bool_t , dbus_message_iter_open_container, (DBusMessageIter *iter,
++                                                            int              type,
++                                                            const char      *contained_signature,
++                                                            DBusMessageIter *sub),
++           (iter, type, contained_signature, sub), return)
++DEFINEFUNC(void        , dbus_message_iter_recurse, (DBusMessageIter *iter,
++                                                     DBusMessageIter *sub),
++           (iter, sub), )
++DEFINEFUNC(DBusMessage* , dbus_message_new, (int          message_type),
++           (message_type), return)
++DEFINEFUNC(DBusMessage* , dbus_message_new_method_call, (const char  *bus_name,
++                                                         const char  *path,
++                                                         const char  *interface,
++                                                         const char  *method),
++           (bus_name, path, interface, method), return)
++DEFINEFUNC(DBusMessage* , dbus_message_new_signal, (const char  *path,
++                                                    const char  *interface,
++                                                    const char  *name),
++           (path, interface, name), return)
++DEFINEFUNC(DBusMessage*  , dbus_message_ref, (DBusMessage   *message),
++           (message), return)
++DEFINEFUNC(void          , dbus_message_set_auto_start, (DBusMessage   *message,
++                                                         dbus_bool_t    auto_start),
++           (message, auto_start), return)
++DEFINEFUNC(dbus_bool_t   , dbus_message_set_destination, (DBusMessage   *message,
++                                                          const char    *destination),
++           (message, destination), return)
++DEFINEFUNC(dbus_bool_t   , dbus_message_set_error_name, (DBusMessage   *message,
++                                                         const char    *name),
++           (message, name), return)
++DEFINEFUNC(void          , dbus_message_set_no_reply, (DBusMessage   *message,
++                                                       dbus_bool_t    no_reply),
++           (message, no_reply), return)
++DEFINEFUNC(dbus_bool_t   , dbus_message_set_path, (DBusMessage   *message,
++                                                   const char    *object_path),
++           (message, object_path), return)
++DEFINEFUNC(dbus_bool_t   , dbus_message_set_reply_serial, (DBusMessage   *message,
++                                                           dbus_uint32_t  reply_serial),
++           (message, reply_serial), return)
++DEFINEFUNC(dbus_bool_t   , dbus_message_set_sender, (DBusMessage   *message,
++                                                     const char    *sender),
++           (message, sender), return)
++DEFINEFUNC(void          , dbus_message_unref, (DBusMessage   *message),
++           (message), )
++
++/* dbus-pending-call.h */
++DEFINEFUNC(dbus_bool_t  , dbus_pending_call_set_notify, (DBusPendingCall               *pending,
++                                                         DBusPendingCallNotifyFunction  function,
++                                                         void                          *user_data,
++                                                         DBusFreeFunction               free_user_data),
++           (pending, function, user_data, free_user_data), return)
++DEFINEFUNC(void         , dbus_pending_call_block, (DBusPendingCall               *pending),
++           (pending), )
++DEFINEFUNC(void         , dbus_pending_call_cancel, (DBusPendingCall               *pending),
++           (pending), )
++DEFINEFUNC(dbus_bool_t  , dbus_pending_call_get_completed, (DBusPendingCall               *pending),
++           (pending), return)
++DEFINEFUNC(DBusMessage* , dbus_pending_call_steal_reply, (DBusPendingCall               *pending),
++           (pending), return)
++DEFINEFUNC(void         , dbus_pending_call_unref, (DBusPendingCall               *pending),
++           (pending), return)
++
++/* dbus-server.h */
++DEFINEFUNC(dbus_bool_t , dbus_server_allocate_data_slot, (dbus_int32_t     *slot_p),
++           (slot_p), return)
++DEFINEFUNC(void        , dbus_server_disconnect, (DBusServer     *server),
++           (server), )
++DEFINEFUNC(char*       , dbus_server_get_address, (DBusServer     *server),
++           (server), return)
++DEFINEFUNC(dbus_bool_t , dbus_server_get_is_connected, (DBusServer     *server),
++           (server), return)
++DEFINEFUNC(DBusServer* , dbus_server_listen, (const char     *address,
++                                              DBusError      *error),
++           (address, error), return)
++DEFINEFUNC(dbus_bool_t , dbus_server_set_data, (DBusServer       *server,
++                                                int               slot,
++                                                void             *data,
++                                                DBusFreeFunction  free_data_func),
++           (server, slot, data, free_data_func), return)
++DEFINEFUNC(void        , dbus_server_set_new_connection_function, (DBusServer                *server,
++                                                                   DBusNewConnectionFunction  function,
++                                                                   void                      *data,
++                                                                   DBusFreeFunction           free_data_function),
++           (server, function, data, free_data_function), )
++DEFINEFUNC(dbus_bool_t , dbus_server_set_timeout_functions, (DBusServer                *server,
++                                                             DBusAddTimeoutFunction     add_function,
++                                                             DBusRemoveTimeoutFunction  remove_function,
++                                                             DBusTimeoutToggledFunction toggled_function,
++                                                             void                      *data,
++                                                             DBusFreeFunction           free_data_function),
++           (server, add_function, remove_function, toggled_function, data, free_data_function), return)
++DEFINEFUNC(dbus_bool_t , dbus_server_set_watch_functions, (DBusServer                *server,
++                                                           DBusAddWatchFunction       add_function,
++                                                           DBusRemoveWatchFunction    remove_function,
++                                                           DBusWatchToggledFunction   toggled_function,
++                                                           void                      *data,
++                                                           DBusFreeFunction           free_data_function),
++           (server, add_function, remove_function, toggled_function, data, free_data_function), return)
++DEFINEFUNC(void        , dbus_server_unref, (DBusServer     *server),
++           (server), )
++
++/* dbus-signature.h */
++DEFINEFUNC(dbus_bool_t     , dbus_signature_validate, (const char       *signature,
++                                                       DBusError        *error),
++           (signature, error), return)
++DEFINEFUNC(dbus_bool_t     , dbus_signature_validate_single, (const char       *signature,
++                                                              DBusError        *error),
++           (signature, error), return)
++DEFINEFUNC(dbus_bool_t     , dbus_type_is_basic, (int            typecode),
++           (typecode), return)
++DEFINEFUNC(dbus_bool_t     , dbus_type_is_fixed, (int            typecode),
++           (typecode), return)
++
++/* dbus-thread.h */
++DEFINEFUNC(dbus_bool_t     , dbus_threads_init_default, (), (), return)
++
++QT_END_NAMESPACE
++
++#endif // QT_NO_DBUS
++#endif // QDBUS_SYMBOLS_P_H
