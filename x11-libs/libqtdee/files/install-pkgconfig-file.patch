@@ -1,0 +1,16 @@
+=== modified file 'CMakeLists.txt'
+--- CMakeLists.txt	2011-11-23 10:00:21 +0000
++++ CMakeLists.txt	2011-12-12 16:12:24 +0000
+@@ -94,6 +94,11 @@
+     DESTINATION ${INCLUDE_INSTALL_DIR}
+     )
+ 
++# FIXME: Generate from ${CMAKE_INSTALL_PREFIX}
++install(FILES libqtdee.pc
++    DESTINATION lib/pkgconfig
++    )
++
+ ## QtDeeQml
+ install(TARGETS QtDeeQml
+     LIBRARY DESTINATION ${IMPORT_INSTALL_DIR}
+

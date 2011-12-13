@@ -27,3 +27,6 @@ src_unpack() {
 	bzr_src_unpack 
 }
 
+src_prepare() {
+	epatch "${FILESDIR}"/install-pkgconfig-file.patch
+}
