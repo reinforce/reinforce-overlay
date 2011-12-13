@@ -5,7 +5,7 @@
 EAPI="3"
 inherit bzr eutils cmake-utils
 
-DESCRIPTION="Unity 2D shared library"
+DESCRIPTION="Unity"
 HOMEPAGE="https://launchpad.net/unity-2d"
 
 SLOT="0"
@@ -14,8 +14,8 @@ LICENSE="GPLv3"
 KEYWORDS="~x86 ~amd64 ~arm"
 IUSE=""
 
-EBZR_REPO_URI="lp:unity-2d/4.0"
-EBZR_PROJECT="unity-2d"
+EBZR_REPO_URI="lp:unity/4.0"
+EBZR_PROJECT="unity"
 
 RDEPEND="dev-util/cmake
 	x11-libs/cairo

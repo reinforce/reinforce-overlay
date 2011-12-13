@@ -5,17 +5,17 @@
 EAPI="3"
 inherit bzr eutils cmake-utils
 
-DESCRIPTION="Unity 2D shared library"
-HOMEPAGE="https://launchpad.net/unity-2d"
+DESCRIPTION="Unity"
+HOMEPAGE="https://launchpad.net/unity"
 
 SLOT="0"
 LICENSE="GPLv3"
 
-KEYWORDS="~x86 ~amd64 ~arm"
+KEYWORDS=""
 IUSE=""
 
-EBZR_REPO_URI="lp:unity-2d/4.0"
-EBZR_PROJECT="unity-2d"
+EBZR_REPO_URI="lp:unity"
+EBZR_PROJECT="unity"
 
 RDEPEND="dev-util/cmake
 	x11-libs/cairo
@@ -42,8 +42,7 @@ RDEPEND="dev-util/cmake
 	x11-libs/libX11
 	x11-libs/libXcomposite
 	x11-libs/libXext
-	x11-libs/libXi
-	>=x11-wm/compiz-0.9"
+	x11-libs/libXi"
 
 DEPEND="${RDEPEND}"
 
