@@ -11,10 +11,10 @@ HOMEPAGE="https://launchpad.net/unity-2d"
 SLOT="0"
 LICENSE="GPLv3"
 
-KEYWORDS=""
+KEYWORDS="~x86 ~amd64 ~arm"
 IUSE=""
 
-EBZR_REPO_URI="lp:unity-2d"
+EBZR_REPO_URI="lp:unity-2d/4.0"
 EBZR_PROJECT="unity-2d"
 
 RDEPEND="dev-util/cmake
