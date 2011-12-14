@@ -22,12 +22,14 @@ RDEPEND="dev-util/cmake
 	gnome-base/dconf
 	x11-libs/gdk-pixbuf
 	dev-libs/glib
-	x11-libs/gtk+:3
+	dev-libs/json-glib
+	>=x11-libs/gtk+-3.1
 	dev-libs/libindicator
 	x11-libs/qt-declarative
 	x11-libs/gconf-qt
 	x11-libs/dconf-qt
 	x11-libs/dbusmenu-qt
+	dev-libs/libdbusmenu
 	x11-libs/bamf
 	x11-libs/libqtbamf
 	x11-libs/libqtdee
