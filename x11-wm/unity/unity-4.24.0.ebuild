@@ -3,10 +3,11 @@
 # $Header: $
 
 EAPI="3"
-inherit bzr eutils cmake-utils
+inherit cmake-utils
 
 DESCRIPTION="Unity"
-HOMEPAGE="https://launchpad.net/unity-2d"
+HOMEPAGE="https://launchpad.net/unity"
+SRC_URI="http://launchpad.net/unity/4.0/${PV}/+download/unity-${PV}.tar.bz2"
 
 SLOT="0"
 LICENSE="GPLv3"
@@ -14,10 +15,7 @@ LICENSE="GPLv3"
 KEYWORDS="~x86 ~amd64 ~arm"
 IUSE=""
 
-EBZR_REPO_URI="lp:unity/4.0"
-EBZR_PROJECT="unity"
-
-RDEPEND="dev-util/cmake
+DEPEND="dev-util/cmake
 	x11-libs/cairo
 	gnome-base/dconf
 	x11-libs/gdk-pixbuf
@@ -46,10 +44,9 @@ RDEPEND="dev-util/cmake
 	x11-libs/libXcomposite
 	x11-libs/libXext
 	x11-libs/libXi
+	x11-libs/libunity
+	x11-libs/libunity-misc
 	>=x11-wm/compiz-0.9"
 
-DEPEND="${RDEPEND}"
+RDEPEND="${DEPEND}"
 
-src_unpack() { 
-	bzr_src_unpack 
-}

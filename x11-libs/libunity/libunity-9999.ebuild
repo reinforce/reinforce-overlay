@@ -3,19 +3,33 @@
 # $Header: $
 
 EAPI="3"
-
-inherit autotools
+inherit bzr eutils autotools
 
 DESCRIPTION="Misc. differently licensed stuff for Unity"
-SRC_URI="http://launchpad.net/libunity-misc/trunk/${PV}/+download/libunity-misc-${PV}.tar.gz"
-HOMEPAGE="https://launchpad.net/libunity-misc"
-KEYWORDS="~x86 ~amd64 ~arm"
-SLOT="0" 
-LICENSE="LGPL3"
+HOMEPAGE="https://launchpad.net/libunity"
+
+SLOT="0"
+LICENSE="GPLv3"
+
+KEYWORDS=""
 IUSE=""
 
+EBZR_REPO_URI="lp:libunity"
+EBZR_PROJECT="libunity"
+
 DEPEND=""
+
+RDEPEND="${DEPEND}"
+
+src_unpack() { 
+	bzr_src_unpack 
+}
+
+src_prepare() {
+	eautoreconf
+}
 
 src_install() {
 	emake DESTDIR="${D}" install
 }
+

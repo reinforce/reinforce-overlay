@@ -4,18 +4,19 @@
 
 EAPI="3"
 
-inherit autotools
+inherit eutils
 
-DESCRIPTION="Misc. differently licensed stuff for Unity"
-SRC_URI="http://launchpad.net/libunity-misc/trunk/${PV}/+download/libunity-misc-${PV}.tar.gz"
-HOMEPAGE="https://launchpad.net/libunity-misc"
+DESCRIPTION="Dee"
+SRC_URI="http://launchpad.net/dee/0.5/${PV}/+download/dee-${PV}.tar.gz"
+HOMEPAGE="https://launchpad.net/dee"
 KEYWORDS="~x86 ~amd64 ~arm"
 SLOT="0" 
 LICENSE="LGPL3"
 IUSE=""
 
-DEPEND=""
+DEPEND="dev-libs/libgee"
 
 src_install() {
 	emake DESTDIR="${D}" install
 }
+
