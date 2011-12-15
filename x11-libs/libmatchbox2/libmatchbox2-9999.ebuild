@@ -25,5 +25,7 @@ RDEPEND="x11-libs/libX11
 DEPEND="${RDEPEND}"
 
 src_prepare() {
+	sed -i 's/clutter-0.8/clutter-1.0/' configure.ac
+	sed -i 's/libpng12/libpng/' configure.ac
 	eautoreconf
 }
