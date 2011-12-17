@@ -6,7 +6,7 @@ EAPI="3"
 inherit bzr eutils autotools
 
 DESCRIPTION="Kernel Device Emulation Library"
-HOMEPAGE="https://launchpad.net/utouch-evemu"
+HOMEPAGE=""
 
 SLOT="0"
 LICENSE="GPLv3"
@@ -25,8 +25,8 @@ RDEPEND="sys-devel/libtool
 
 DEPEND="${RDEPEND}"
 
-src_unpack() { 
-	bzr_src_unpack 
+src_unpack() {
+	bzr_src_unpack
 }
 
 src_prepare() {
