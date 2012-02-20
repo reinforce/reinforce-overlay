@@ -110,7 +110,8 @@ src_unpack() {
 
 src_prepare() {
 	epatch "${FILESDIR}"/${PN}-1.1.15-winegcc.patch #260726
-	epatch "${FILESDIR}"/0001-WoT-patch.patch #WoT mouse patch
+	epatch "${FILESDIR}"/raw-input.patch
+	epatch "${FILESDIR}"/disable-dynamic-vertex-buffers.patch
 	epatch_user #282735
 	sed -i '/^UPDATE_DESKTOP_DATABASE/s:=.*:=true:' tools/Makefile.in || die
 	sed -i '/^MimeType/d' tools/wine.desktop || die #117785
