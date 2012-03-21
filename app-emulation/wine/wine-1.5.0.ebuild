@@ -124,8 +124,9 @@ src_unpack() {
 src_prepare() {
 	epatch "${FILESDIR}"/${PN}-1.1.15-winegcc.patch #260726
 	epatch "${FILESDIR}"/${PN}-1.4_rc2-multilib-portage.patch #395615
-	epatch "${FILESDIR}"/raw3.patch
 	epatch "${FILESDIR}"/disable-dynamic-vertex-buffers.patch
+	epatch "${FILESDIR}"/raw3.patch
+	tools/make_requests
 	epatch_user #282735
 	eautoreconf
 	sed -i '/^UPDATE_DESKTOP_DATABASE/s:=.*:=true:' tools/Makefile.in || die
