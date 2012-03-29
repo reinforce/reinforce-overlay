@@ -57,7 +57,7 @@ RDEPEND="truetype? ( >=media-libs/freetype-2.0.0 media-fonts/corefonts )
 	openal? ( media-libs/openal )
 	udisks? (
 		sys-apps/dbus
-		sys-fs/udisks
+		sys-fs/udisks:0
 	)
 	gnutls? ( net-libs/gnutls )
 	gstreamer? ( media-libs/gstreamer media-libs/gst-plugins-base )
@@ -126,6 +126,7 @@ src_prepare() {
 	epatch "${FILESDIR}"/${PN}-1.4_rc2-multilib-portage.patch #395615
 	epatch "${FILESDIR}"/disable-dynamic-vertex-buffers.patch
 	epatch "${FILESDIR}"/raw3.patch
+	EPATCH_OPTS="-R ${EPATCH_OPTS}" epatch "${FILESDIR}"/update-key-state-on-keymapnotify.patch
 	tools/make_requests
 	epatch_user #282735
 	eautoreconf
