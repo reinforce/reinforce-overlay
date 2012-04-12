@@ -11,9 +11,7 @@ SRC_URI="http://downloads.sourceforge.net/project/eprd/${P}/${P}.tar.gz"
 LICENSE="GPLv3"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-
-IUSE="debug"
-
+IUSE=""
 RDEPEND=""
 
 BUILD_TARGETS="modules"
