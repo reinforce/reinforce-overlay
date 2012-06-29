@@ -1,6 +1,6 @@
 # Copyright 1999-2012 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/app-emulation/wine/wine-1.4.ebuild,v 1.1 2012/03/07 23:49:32 tetromino Exp $
+# $Header: /var/cvsroot/gentoo-x86/app-emulation/wine/wine-1.4.ebuild,v 1.6 2012/06/28 13:06:35 ago Exp $
 
 EAPI="4"
 
@@ -13,8 +13,8 @@ if [[ ${PV} == "9999" ]] ; then
 	#KEYWORDS=""
 else
 	MY_P="${PN}-${PV/_/-}"
-	SRC_URI="mirror://sourceforge/${PN}/${MY_P}.tar.bz2"
-	KEYWORDS="-* ~amd64 ~x86 ~x86-fbsd"
+	SRC_URI="mirror://sourceforge/${PN}/Source/${MY_P}.tar.bz2"
+	KEYWORDS="-* amd64 ~x86 ~x86-fbsd"
 	S=${WORKDIR}/${MY_P}
 fi
 
@@ -23,8 +23,8 @@ DESCRIPTION="free implementation of Windows(tm) on Unix"
 HOMEPAGE="http://www.winehq.org/"
 SRC_URI="${SRC_URI}
 	gecko? (
-		mirror://sourceforge/wine/wine_gecko-${GV}-x86.msi
-		win64? ( mirror://sourceforge/wine/wine_gecko-${GV}-x86_64.msi )
+		mirror://sourceforge/${PN}/Wine%20Gecko/${GV}/wine_gecko-${GV}-x86.msi
+		win64? ( mirror://sourceforge/${PN}/Wine%20Gecko/${GV}/wine_gecko-${GV}-x86_64.msi )
 	)"
 
 LICENSE="LGPL-2.1"
@@ -57,7 +57,7 @@ RDEPEND="truetype? ( >=media-libs/freetype-2.0.0 media-fonts/corefonts )
 	openal? ( media-libs/openal )
 	udisks? (
 		sys-apps/dbus
-		sys-fs/udisks
+		sys-fs/udisks:0
 	)
 	gnutls? ( net-libs/gnutls )
 	gstreamer? ( media-libs/gstreamer media-libs/gst-plugins-base )
@@ -99,7 +99,7 @@ DEPEND="${RDEPEND}
 	)
 	xinerama? ( x11-proto/xineramaproto )
 	!hardened? ( sys-devel/prelink )
-	dev-util/pkgconfig
+	virtual/pkgconfig
 	virtual/yacc
 	sys-devel/flex"
 
