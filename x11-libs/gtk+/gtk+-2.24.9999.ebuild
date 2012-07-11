@@ -4,7 +4,9 @@
 
 EAPI="4"
 
-inherit eutils flag-o-matic autotools git-2
+inherit eutils flag-o-matic virtualx autotools git-2
+#inherit eutils flag-o-matic gnome.org virtualx autotools
+
 
 DESCRIPTION="Gimp ToolKit +"
 HOMEPAGE="http://www.gtk.org/"
@@ -101,7 +103,7 @@ src_test() {
 src_install() {
 	emake DESTDIR="${D}" install
 
-	set_gtk2_confdir
+#	set_gtk2_confdir
 	dodir ${GTK2_CONFDIR}
 	keepdir ${GTK2_CONFDIR}
 

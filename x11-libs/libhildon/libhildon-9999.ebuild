@@ -21,6 +21,8 @@ EGIT_BRANCH="gtk_3"
 RDEPEND="x11-libs/libX11
 	x11-libs/libXext
 	x11-libs/libXt
+	x11-libs/gtk+:3
+	media-libs/libcanberra
 	sys-apps/dbus[X]
 	dev-util/gtk-doc"
 
