@@ -34,3 +34,7 @@ src_prepare() {
 	sed -i -e '/^#pragma GCC diagnostic ignored "-Wuninitialized"/d' hildon/hildon-touch-selector-entry.c || die
 	sed -i -e '/^#pragma GCC diagnostic pop/d' hildon/hildon-touch-selector-entry.c || die
 }
+
+src_install() {
+	emake DESTDIR="${D}" install
+}
