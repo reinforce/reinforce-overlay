@@ -30,4 +30,7 @@ DEPEND="${RDEPEND}"
 
 src_prepare() {
 	eautoreconf
+	sed -i -e '/^#pragma GCC diagnostic push/d' hildon/hildon-touch-selector-entry.c || die
+	sed -i -e '/^#pragma GCC diagnostic ignored "-Wuninitialized"/d' hildon/hildon-touch-selector-entry.c || die
+	sed -i -e '/^#pragma GCC diagnostic pop/d' hildon/hildon-touch-selector-entry.c || die
 }
