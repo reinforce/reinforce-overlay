@@ -26,7 +26,10 @@ RDEPEND="x11-libs/libX11
 	x11-libs/libhildondesktop
 	x11-libs/libmatchbox2
 	media-libs/clutter
-	sys-apps/dbus[X]"
+	gnome-base/gnome-vfs
+	gnome-base/gnome-menus
+	gnome-base/gconf
+	dev-libs/dbus-glib"
 
 DEPEND="${RDEPEND}"
 
