@@ -5,8 +5,8 @@
 EAPI="3"
 inherit eutils git-2 autotools
 
-DESCRIPTION="OSS implementation of Maemo5 libbmeipc library"
-HOMEPAGE="https://gitorious.org/libbmeipc"
+DESCRIPTION="Library for communicating with BME"
+HOMEPAGE="http://meego.gitorious.org/meego-device-adaptation/n900_libbme"
 
 SLOT="0"
 LICENSE="GPLv2"
@@ -14,7 +14,7 @@ LICENSE="GPLv2"
 KEYWORDS="~x86 ~amd64 ~arm"
 IUSE=""
 
-EGIT_REPO_URI="git://gitorious.org/libbmeipc/libbmeipc.git"
+EGIT_REPO_URI="git://gitorious.org/meego-device-adaptation/n900_libbme.git"
 EGIT_SOURCEDIR="${S}"
 EGIT_BRANCH="master"
 

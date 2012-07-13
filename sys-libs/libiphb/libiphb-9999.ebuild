@@ -18,7 +18,7 @@ EGIT_REPO_URI="git://gitorious.org/meego-middleware/libiphb.git"
 EGIT_SOURCEDIR="${S}"
 EGIT_BRANCH="master"
 
-RDEPEND=""
+RDEPEND="sys-libs/libdsme"
 DEPEND="${RDEPEND}"
 
 src_prepare() {
