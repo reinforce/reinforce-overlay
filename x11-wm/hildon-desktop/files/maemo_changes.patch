@@ -1,5 +1,4 @@
-diff -ur hildon-desktop-clean//src/launcher/hd-launcher-editor.c hildon-desktop/src/launcher/hd-launcher-editor.c
---- hildon-desktop-clean//src/launcher/hd-launcher-editor.c	2012-07-13 21:14:41.776453670 +0400
+--- hildon-desktop-clean/src/launcher/hd-launcher-editor.c	2012-07-13 21:14:41.776453670 +0400
 +++ hildon-desktop/src/launcher/hd-launcher-editor.c	2012-07-13 21:16:29.186453039 +0400
 @@ -400,8 +400,12 @@
                                                       G_TYPE_STRING);
@@ -23,3 +22,14 @@ diff -ur hildon-desktop-clean//src/launcher/hd-launcher-editor.c hildon-desktop/
    GdkDisplay *gdk_display = gdk_display_get_default ();
    Display *display = GDK_DISPLAY_XDISPLAY (gdk_display);
    Window xwindow = xwindow = GDK_WINDOW_XID (gdk_window);
+--- hildon-desktop-clean/src/main.c	2012-07-13 18:47:32.000000000 +0000
++++ hildon-desktop/src/main.c	2012-07-13 18:45:34.000000000 +0000
+@@ -605,7 +605,7 @@
+ 
+ static void hd_fpu_set_mode(OSSO_FPU_MODE mode)
+ {
+-#ifdef __arm__
++#if  defined(__arm__) && defined(__VFP_FP__) && !defined(__SOFTFP__)
+   if (OSSO_FPU_FAST == mode)
+   {
+     int tmp;
