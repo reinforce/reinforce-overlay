@@ -1,0 +1,24 @@
+--- src/launcher/hd-launcher-editor.c.orig	2012-07-13 14:09:29.000000000 +0000
++++ src/launcher/hd-launcher-editor.c	2012-07-13 14:10:25.000000000 +0000
+@@ -400,7 +400,12 @@
+                                                      G_TYPE_STRING);
+ 
+   /* and the icon view. */
++#ifdef MAEMO_GTK
+   priv->icon_view = hildon_gtk_icon_view_new_with_model (HILDON_UI_MODE_NORMAL,
++                                                         priv->model);
++#else
++  priv->icon_view = gtk_icon_view_new_with_model (priv->model);
++#endif
+ 
+   renderer = gtk_cell_renderer_pixbuf_new ();
+   g_object_set (G_OBJECT (renderer),
+@@ -501,7 +506,7 @@
+ {
+   gtk_widget_realize (window);
+ 
+-  GdkWindow *gdk_window = gtk_widget_get_window (window);
++  GdkWindow *gdk_window = window->window;
+   GdkDisplay *gdk_display = gdk_display_get_default ();
+   Display *display = GDK_DISPLAY_XDISPLAY (gdk_display);
+   Window xwindow = xwindow = GDK_WINDOW_XID (gdk_window);

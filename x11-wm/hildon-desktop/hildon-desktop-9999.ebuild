@@ -35,6 +35,7 @@ DEPEND="${RDEPEND}"
 
 src_prepare() {
 	eautoreconf
+	epatch "${FILESDIR}"/maemo_changes.patch
 }
 
 src_install() {

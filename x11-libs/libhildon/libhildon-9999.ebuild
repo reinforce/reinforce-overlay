@@ -12,7 +12,7 @@ SLOT="0"
 LICENSE="GPLv2"
 
 KEYWORDS="~x86 ~amd64 ~arm"
-IUSE="-maemo-gtk"
+IUSE=""
 
 EGIT_REPO_URI="https://github.com/Cordia/libhildon.git"
 EGIT_SOURCEDIR="${S}"
