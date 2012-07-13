@@ -25,7 +25,7 @@ RDEPEND="x11-libs/libX11
 	x11-libs/libhildon
 	x11-libs/libhildondesktop
 	x11-libs/libmatchbox2
-	media-libs/clutter:0.8
+	media-libs/clutter
 	sys-apps/dbus[X]"
 
 DEPEND="${RDEPEND}"
@@ -33,3 +33,8 @@ DEPEND="${RDEPEND}"
 src_prepare() {
 	eautoreconf
 }
+
+src_install() {
+	emake DESTDIR="${D}" install
+}
+

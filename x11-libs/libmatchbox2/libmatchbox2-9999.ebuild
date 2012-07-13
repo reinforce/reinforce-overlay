@@ -21,12 +21,17 @@ EGIT_BRANCH="clutter_0_8"
 RDEPEND="x11-libs/libX11
 	x11-libs/libXext
 	x11-libs/libXt
-	media-libs/clutter:0.8
-	sys-apps/dbus[X]
+	media-libs/clutter
 	dev-util/gtk-doc"
 
 DEPEND="${RDEPEND}"
 
 src_prepare() {
 	eautoreconf
+	epatch "${FILESDIR}"/XKeycodeToKeysym.patch
 }
+
+src_install() {
+	emake DESTDIR="${D}" install
+}
+

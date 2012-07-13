@@ -12,7 +12,7 @@ SLOT="0"
 LICENSE="GPLv2"
 
 KEYWORDS="~x86 ~amd64 ~arm"
-IUSE="-maemo-gtk"
+IUSE=""
 
 EGIT_REPO_URI="https://github.com/Cordia/clutter.git"
 EGIT_SOURCEDIR="${S}"
@@ -28,3 +28,8 @@ DEPEND="${RDEPEND}"
 src_prepare() {
 	eautoreconf
 }
+
+src_install() {
+	emake DESTDIR="${D}" install
+}
+

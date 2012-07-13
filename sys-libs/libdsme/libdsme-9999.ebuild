@@ -18,7 +18,8 @@ EGIT_REPO_URI="git://gitorious.org/meego-middleware/libdsme.git"
 EGIT_SOURCEDIR="${S}"
 EGIT_BRANCH="master"
 
-RDEPEND="sys-libs/libbme"
+RDEPEND="sys-apps/dbus
+	sys-libs/libbme"
 DEPEND="${RDEPEND}"
 
 src_install() {

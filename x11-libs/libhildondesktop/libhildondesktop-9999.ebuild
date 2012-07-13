@@ -26,3 +26,8 @@ DEPEND="${RDEPEND}"
 src_prepare() {
 	eautoreconf
 }
+
+src_install() {
+	emake DESTDIR="${D}" install
+}
+
