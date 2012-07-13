@@ -5,8 +5,8 @@
 EAPI="3"
 inherit eutils git-2 autotools
 
-DESCRIPTION="Hildon-Desktop support library"
-HOMEPAGE="https://github.com/Cordia/libhildondesktop"
+DESCRIPTION="System heartbeat client library"
+HOMEPAGE="http://meego.gitorious.org/meego-middleware/libiphb"
 
 SLOT="0"
 LICENSE="GPLv2"
@@ -14,15 +14,17 @@ LICENSE="GPLv2"
 KEYWORDS="~x86 ~amd64 ~arm"
 IUSE=""
 
-EGIT_REPO_URI="https://github.com/Cordia/libhildondesktop.git"
+EGIT_REPO_URI="git://gitorious.org/meego-middleware/libiphb.git"
 EGIT_SOURCEDIR="${S}"
 EGIT_BRANCH="master"
 
-RDEPEND="x11-libs/libhildon
-	sys-libs/libiphb"
-
+RDEPEND=""
 DEPEND="${RDEPEND}"
 
 src_prepare() {
 	eautoreconf
+}
+
+src_install() {
+	emake DESTDIR="${D}" install
 }
