@@ -1,4 +1,4 @@
---- clean/src/launcher/hd-launcher-editor.c.orig	2012-07-13 14:09:29.000000000 +0000
+--- clean/src/launcher/hd-launcher-editor.c	2012-07-13 14:09:29.000000000 +0000
 +++ work/src/launcher/hd-launcher-editor.c	2012-07-13 14:10:25.000000000 +0000
 @@ -400,7 +400,12 @@
                                                       G_TYPE_STRING);
