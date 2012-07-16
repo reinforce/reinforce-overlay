@@ -1,0 +1,1256 @@
+diff -ur aaa/configure.ac bbb/configure.ac
+--- aaa/configure.ac	2012-07-16 21:02:37.670753745 +0400
++++ bbb/configure.ac	2012-07-16 23:12:17.530708043 +0400
+@@ -194,7 +194,7 @@
+ if test "$glib_native_win32" != yes; then
+     # libtool option to control which symbols are exported
+     # right now, symbols starting with _ are not exported
+-    LIBTOOL_EXPORT_OPTIONS='-export-symbols-regex "^g.*"'
++    LIBTOOL_EXPORT_OPTIONS='-export-symbols-regex "^[[^_]].*"'
+ else
+     # We currently use .def files on Windows
+     LIBTOOL_EXPORT_OPTIONS=
+@@ -239,6 +239,19 @@
+   enable_threads=no
+ fi
+ 
++dnl arg to turn on maemo specific features
++AC_ARG_ENABLE(maemo,
++              AC_HELP_STRING([--enable-maemo=@<:@yes/no@:>@],
++                             [enable Maemo specific features @<:@default=no@:>@]),,
++              enable_maemo=no)
++
++dnl Handle --enable-maemo option
++if test "x$enable_maemo" = "xyes"; then
++  AC_DEFINE(MAEMO_CHANGES, 1, [define to 1 to enable Maemo specific features])
++fi
++
++AM_CONDITIONAL(MAEMO_CHANGES, test x$enable_maemo = xyes)
++
+ AC_MSG_CHECKING([whether to enable garbage collector friendliness])
+ if test "x$enable_gc_friendly" = "xyes"; then
+   AC_DEFINE(ENABLE_GC_FRIENDLY_DEFAULT, 1, [Whether to enable GC friendliness by default])
+diff -ur aaa/gio/xdgmime/xdgmime.c bbb/gio/xdgmime/xdgmime.c
+--- aaa/gio/xdgmime/xdgmime.c	2011-08-16 04:51:30.000000000 +0400
++++ bbb/gio/xdgmime/xdgmime.c	2012-07-16 22:28:16.290723558 +0400
+@@ -97,8 +97,8 @@
+ 				 void       *user_data);
+ 
+ static void
+-xdg_dir_time_list_add (char   *file_name, 
+-		       time_t  mtime)
++xdg_dir_time_list_add (const char *file_name,
++		       time_t      mtime)
+ {
+   XdgDirTimeList *list;
+ 
+@@ -106,14 +106,14 @@
+     {
+       if (strcmp (list->directory_name, file_name) == 0)
+         {
+-          free (file_name);
+           return;
+         }
+     }
+   
+   list = calloc (1, sizeof (XdgDirTimeList));
+   list->checked = XDG_CHECKED_UNCHECKED;
+-  list->directory_name = file_name;
++  list->directory_name = malloc (strlen (file_name) + 1);
++  strcpy (list->directory_name, file_name);
+   list->mtime = mtime;
+   list->next = dir_time_list;
+   dir_time_list = list;
+@@ -138,11 +138,19 @@
+ {
+   char *file_name;
+   struct stat st;
++  int dirlen;
+ 
+   assert (directory != NULL);
+ 
+-  file_name = malloc (strlen (directory) + strlen ("/mime/mime.cache") + 1);
+-  strcpy (file_name, directory); strcat (file_name, "/mime/mime.cache");
++  dirlen = strlen (directory) + strlen ("/mime/");
++  file_name = alloca (dirlen + 30);
++  strcpy (file_name, directory);
++  strcat (file_name, "/mime/");
++
++  if (access (file_name, X_OK) != 0)
++    return FALSE;
++
++  strcpy (file_name + dirlen, "mime.cache");
+   if (stat (file_name, &st) == 0)
+     {
+       XdgMimeCache *cache = _xdg_mime_cache_new_from_file (file_name);
+@@ -159,10 +167,7 @@
+ 	  return FALSE;
+ 	}
+     }
+-  free (file_name);
+-
+-  file_name = malloc (strlen (directory) + strlen ("/mime/globs2") + 1);
+-  strcpy (file_name, directory); strcat (file_name, "/mime/globs2");
++  strcpy (file_name + dirlen, "globs2");
+   if (stat (file_name, &st) == 0)
+     {
+       _xdg_mime_glob_read_from_file (global_hash, file_name, TRUE);
+@@ -170,51 +175,31 @@
+     }
+   else
+     {
+-      free (file_name);
+-      file_name = malloc (strlen (directory) + strlen ("/mime/globs") + 1);
+-      strcpy (file_name, directory); strcat (file_name, "/mime/globs");
++      strcpy (file_name + dirlen, "globs");
+       if (stat (file_name, &st) == 0)
+         {
+           _xdg_mime_glob_read_from_file (global_hash, file_name, FALSE);
+           xdg_dir_time_list_add (file_name, st.st_mtime);
+         }
+-      else
+-        {
+-          free (file_name);
+-        }
+     }
+ 
+-  file_name = malloc (strlen (directory) + strlen ("/mime/magic") + 1);
+-  strcpy (file_name, directory); strcat (file_name, "/mime/magic");
++  strcpy (file_name + dirlen, "magic");
+   if (stat (file_name, &st) == 0)
+     {
+       _xdg_mime_magic_read_from_file (global_magic, file_name);
+       xdg_dir_time_list_add (file_name, st.st_mtime);
+     }
+-  else
+-    {
+-      free (file_name);
+-    }
+-
+-  file_name = malloc (strlen (directory) + strlen ("/mime/aliases") + 1);
+-  strcpy (file_name, directory); strcat (file_name, "/mime/aliases");
++  strcpy (file_name + dirlen, "aliases");
+   _xdg_mime_alias_read_from_file (alias_list, file_name);
+-  free (file_name);
+ 
+-  file_name = malloc (strlen (directory) + strlen ("/mime/subclasses") + 1);
+-  strcpy (file_name, directory); strcat (file_name, "/mime/subclasses");
++  strcpy (file_name + dirlen, "subclasses");
+   _xdg_mime_parent_read_from_file (parent_list, file_name);
+-  free (file_name);
+ 
+-  file_name = malloc (strlen (directory) + strlen ("/mime/icons") + 1);
+-  strcpy (file_name, directory); strcat (file_name, "/mime/icons");
++  strcpy (file_name + dirlen, "icons");
+   _xdg_mime_icon_read_from_file (icon_list, file_name);
+-  free (file_name);
+ 
+-  file_name = malloc (strlen (directory) + strlen ("/mime/generic-icons") + 1);
+-  strcpy (file_name, directory); strcat (file_name, "/mime/generic-icons");
++  strcpy (file_name + dirlen, "generic-icons");
+   _xdg_mime_icon_read_from_file (generic_icon_list, file_name);
+-  free (file_name);
+ 
+   return FALSE; /* Keep processing */
+ }
+@@ -342,14 +327,21 @@
+ {
+   int invalid, exists;
+   char *file_name;
++  int dirlen;
+ 
+   assert (directory != NULL);
+ 
++  dirlen = strlen (directory) + strlen ("/mime/");
++  file_name = alloca (dirlen + 30);
++  strcpy (file_name, directory);
++  strcat (file_name, "/mime/");
++
++  if (access (file_name, X_OK) != 0)
++    return FALSE;
++
+   /* Check the mime.cache file */
+-  file_name = malloc (strlen (directory) + strlen ("/mime/mime.cache") + 1);
+-  strcpy (file_name, directory); strcat (file_name, "/mime/mime.cache");
++  strcpy (file_name + dirlen, "mime.cache");
+   invalid = xdg_check_file (file_name, &exists);
+-  free (file_name);
+   if (invalid)
+     {
+       *invalid_dir_list = TRUE;
+@@ -361,10 +353,8 @@
+     }
+ 
+   /* Check the globs file */
+-  file_name = malloc (strlen (directory) + strlen ("/mime/globs") + 1);
+-  strcpy (file_name, directory); strcat (file_name, "/mime/globs");
++  strcpy (file_name + dirlen, "globs");
+   invalid = xdg_check_file (file_name, NULL);
+-  free (file_name);
+   if (invalid)
+     {
+       *invalid_dir_list = TRUE;
+@@ -372,10 +362,8 @@
+     }
+ 
+   /* Check the magic file */
+-  file_name = malloc (strlen (directory) + strlen ("/mime/magic") + 1);
+-  strcpy (file_name, directory); strcat (file_name, "/mime/magic");
++  strcpy (file_name + dirlen, "magic");
+   invalid = xdg_check_file (file_name, NULL);
+-  free (file_name);
+   if (invalid)
+     {
+       *invalid_dir_list = TRUE;
+diff -ur aaa/glib/gfileutils.c bbb/glib/gfileutils.c
+--- aaa/glib/gfileutils.c	2012-03-12 01:43:28.000000000 +0400
++++ bbb/glib/gfileutils.c	2012-07-16 21:18:54.960748004 +0400
+@@ -1020,7 +1020,14 @@
+ #endif
+   
+   errno = 0;
++#ifdef MAEMO_CHANGES
++  /* introduce a write-barrier for file contents before close()/rename()
++   * to work around file systems with writeback behaviour like UBIFS.
++   */
++  if (fdatasync (fileno (file)) < 0 || fclose (file) == EOF)
++#else /* !MAEMO_CHANGES */
+   if (fclose (file) == EOF)
++#endif /* MAEMO_CHANGES */
+     { 
+       save_errno = errno;
+       
+diff -ur aaa/glib/glib.symbols bbb/glib/glib.symbols
+--- aaa/glib/glib.symbols	2012-03-12 01:43:28.000000000 +0400
++++ bbb/glib/glib.symbols	2012-07-16 21:59:41.750733631 +0400
+@@ -870,6 +870,9 @@
+ g_scanner_sync_file_offset
+ g_scanner_unexp_token
+ g_scanner_warn
++#ifdef MAEMO_CHANGES
++hildon_g_scanner_cache_open
++#endif
+ g_sequence_new
+ g_sequence_free
+ g_sequence_get_length
+@@ -1336,6 +1339,9 @@
+ g_reload_user_special_dirs_cache
+ g_get_user_runtime_dir
+ g_get_user_special_dir
++#ifdef MAEMO_CHANGES
++hildon_get_user_named_dir
++#endif
+ #ifndef _WIN64
+ g_get_user_name PRIVATE
+ #endif
+diff -ur aaa/glib/gmessages.c bbb/glib/gmessages.c
+--- aaa/glib/gmessages.c	2012-03-12 01:43:28.000000000 +0400
++++ bbb/glib/gmessages.c	2012-07-16 21:27:13.050745079 +0400
+@@ -46,6 +46,8 @@
+  * flow, only to give a perhaps-helpful warning before giving up.
+  */
+ 
++#define MAEMO_SYSLOG_ENABLED	/* Maemo builds will temporary use syslog for logging */
++
+ #include "config.h"
+ 
+ #include <stdlib.h>
+@@ -81,6 +83,9 @@
+ #  undef STRICT
+ #endif
+ 
++#ifdef MAEMO_SYSLOG_ENABLED
++#include <syslog.h>
++#endif
+ 
+ /* --- structures --- */
+ typedef struct _GLogDomain	GLogDomain;
+@@ -870,6 +875,7 @@
+   write_string (fd, message);
+ }
+ 
++#ifndef MAEMO_SYSLOG_ENABLED
+ static void
+ escape_string (GString *string)
+ {
+@@ -929,6 +935,142 @@
+ 	p = g_utf8_next_char (p);
+     }
+ }
++#endif /* not MAEMO_SYSLOG_ENABLED */
++
++#ifdef MAEMO_SYSLOG_ENABLED
++/* That is a syslog version of default log handler. */
++/* It shall be used only in case that MAEMO_SYSLOG_ENABLED switched on. */
++
++#define IS_EMPTY_STRING(s)	(NULL == (s) || 0 == *(s))
++
++#define GLIB_PREFIX	"GLIB"
++#define DEFAULT_DOMAIN	"default"
++#define DEFAULT_MESSAGE	"(NULL) message"
++
++static unsigned int G_LOG_OUTPUT_LEVEL;
++
++enum
++  {
++    G_LOG_OUTPUT_LEVEL_MIN = 0,
++    G_LOG_OUTPUT_LEVEL_CRITICAL,
++    G_LOG_OUTPUT_LEVEL_WARNING,
++    G_LOG_OUTPUT_LEVEL_MAX
++  };
++
++#define G_LOG_OUTPUT_LEVEL_DEF G_LOG_OUTPUT_LEVEL_MAX
++
++void g_log_default_handler (
++		const gchar*	log_domain,
++		GLogLevelFlags	log_level,
++		const gchar*	message,
++		gpointer	unused_data
++	)
++{
++	/* This value will be switched to TRUE when log facility is initialized */
++	static gboolean initialized = FALSE;
++
++	/* This call only variables */
++	const gchar* alert    = (log_level & ALERT_LEVELS ? " ** " : " ");
++	const gchar* aborting = (log_level & G_LOG_FLAG_FATAL ? "\naborting..." : "");
++
++	const gchar* prefix;
++	int   priority;
++
++	gchar *output_level;
++	int level;
++
++	/* Check first that logging facility is initialized */
++	if ( !initialized )
++	{
++		openlog(NULL, LOG_PERROR|LOG_PID, LOG_USER);
++		initialized = !initialized;
++
++		G_LOG_OUTPUT_LEVEL = G_LOG_OUTPUT_LEVEL_DEF;
++
++		output_level = getenv("G_LOG_OUTPUT_LEVEL");
++		if (output_level)
++		  {
++		    level = atoi(output_level);
++
++		    if (level >= G_LOG_OUTPUT_LEVEL_MIN &&
++			level <= G_LOG_OUTPUT_LEVEL_MAX)
++		      {
++			G_LOG_OUTPUT_LEVEL = level;
++		      }
++		  }
++	}
++
++	/* Validate log domain */
++	if ( IS_EMPTY_STRING(log_domain) )
++		log_domain = DEFAULT_DOMAIN;
++
++	/* Check log message for validity */
++	if ( IS_EMPTY_STRING(message) )
++		message = DEFAULT_MESSAGE;
++
++
++	/* no logging on minimal output level */
++	if (G_LOG_OUTPUT_LEVEL == G_LOG_OUTPUT_LEVEL_MIN)
++	  {
++	    return;
++	  }
++
++	/* if warning|message and level critical, return */
++	if ((log_level & G_LOG_LEVEL_MASK) >= G_LOG_LEVEL_WARNING)
++	  {
++	    if (G_LOG_OUTPUT_LEVEL == (G_LOG_OUTPUT_LEVEL_CRITICAL))
++	      {
++		return;
++	      }
++	  }
++
++	/* if message and level warning, return */
++	if ((log_level & G_LOG_LEVEL_MASK) >= G_LOG_LEVEL_MESSAGE)
++	  {
++	    if (G_LOG_OUTPUT_LEVEL <= (G_LOG_OUTPUT_LEVEL_WARNING))
++	      {
++		return;
++	      }
++	  }
++
++	/* Process the message prefix and priority */
++	switch (log_level & G_LOG_LEVEL_MASK)
++	{
++		case G_LOG_FLAG_FATAL:
++			prefix   = "FATAL";
++			priority = LOG_EMERG;
++		break;
++		case G_LOG_LEVEL_ERROR:
++			prefix   = "ERROR";
++			priority = LOG_ERR;
++		break;
++		case G_LOG_LEVEL_CRITICAL:
++			prefix   = "CRITICAL";
++			priority = LOG_CRIT;
++		break;
++		case G_LOG_LEVEL_WARNING:
++			prefix   = "WARNING";
++			priority = LOG_WARNING;
++		break;
++		case G_LOG_LEVEL_MESSAGE:
++			prefix   = "MESSAGE";
++			priority = LOG_NOTICE;
++		break;
++		case G_LOG_LEVEL_INFO:
++			prefix   = "INFO";
++			priority = LOG_INFO;
++		break;
++		default:
++			prefix   = "DEBUG";
++			priority = LOG_DEBUG;
++		break;
++	} /* switch log_level */
++
++	/* Now prining the message to syslog */
++	syslog(priority, "%s %s%s%s - %s%s", GLIB_PREFIX, prefix, alert, log_domain, message, aborting);
++} /* g_log_default_handler -- syslog version */
++
++#else /* not MAEMO_SYSLOG_ENABLED -- we will use standart stderr logging */
+ 
+ void
+ g_log_default_handler (const gchar   *log_domain,
+@@ -1018,6 +1160,8 @@
+  *
+  * Returns: the old print handler
+  */
++#endif /* if MAEMO_SYSLOG_ENABLED */
++
+ GPrintFunc
+ g_set_print_handler (GPrintFunc func)
+ {
+diff -ur aaa/glib/gmessages.h bbb/glib/gmessages.h
+--- aaa/glib/gmessages.h	2012-03-12 01:43:28.000000000 +0400
++++ bbb/glib/gmessages.h	2012-07-16 21:31:43.830743487 +0400
+@@ -153,9 +153,13 @@
+ #define g_warning(...)  g_log (G_LOG_DOMAIN,         \
+                                G_LOG_LEVEL_WARNING,  \
+                                __VA_ARGS__)
++#ifndef G_DEBUG_DISABLE
+ #define g_debug(...)    g_log (G_LOG_DOMAIN,         \
+                                G_LOG_LEVEL_DEBUG,    \
+                                __VA_ARGS__)
++#else
++#define g_debug(...)
++#endif
+ #elif defined(G_HAVE_GNUC_VARARGS)
+ #define g_error(format...)    G_STMT_START {                 \
+                                 g_log (G_LOG_DOMAIN,         \
+@@ -173,9 +177,13 @@
+ #define g_warning(format...)    g_log (G_LOG_DOMAIN,         \
+                                        G_LOG_LEVEL_WARNING,  \
+                                        format)
++#ifndef G_DEBUG_DISABLE
+ #define g_debug(format...)      g_log (G_LOG_DOMAIN,         \
+                                        G_LOG_LEVEL_DEBUG,    \
+                                        format)
++#else
++#define g_debug(...)
++#endif
+ #else   /* no varargs macros */
+ static void
+ g_error (const gchar *format,
+@@ -215,6 +223,7 @@
+   g_logv (G_LOG_DOMAIN, G_LOG_LEVEL_WARNING, format, args);
+   va_end (args);
+ }
++#ifndef G_DEBUG_DISABLE
+ static void
+ g_debug (const gchar *format,
+          ...)
+@@ -224,6 +233,14 @@
+   g_logv (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format, args);
+   va_end (args);
+ }
++#else
++static void
++g_debug (const gchar *format,
++		...)
++{
++	; /* debug logging disabled */
++}
++#endif
+ #endif  /* !__GNUC__ */
+ 
+ /**
+diff -ur aaa/glib/gscanner.c bbb/glib/gscanner.c
+--- aaa/glib/gscanner.c	2012-03-12 01:43:28.000000000 +0400
++++ bbb/glib/gscanner.c	2012-07-16 21:48:39.280737522 +0400
+@@ -44,6 +44,14 @@
+ 
+ #include "gscanner.h"
+ 
++#ifdef MAEMO_CHANGES
++#include <sys/mman.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include "gstdio.h"
++#endif /* MAEMO_CHANGES */
++
+ #include "gprintfint.h"
+ #include "gstrfuncs.h"
+ #include "gstring.h"
+@@ -64,6 +72,10 @@
+ )
+ #define	READ_BUFFER_SIZE	(4000)
+ 
++#ifdef MAEMO_CHANGES
++#define INPUT_NAME(scanner) ((scanner)->input_name ? (scanner)->input_name : "<memory>")
++#endif /* MAEMO_CHANGES */
++
+ 
+ /* --- typedefs --- */
+ typedef	struct	_GScannerKey	GScannerKey;
+@@ -237,6 +249,14 @@
+   
+   scanner->msg_handler = g_scanner_msg_handler;
+   
++#ifdef MAEMO_CHANGES
++  scanner->cache_fd = -1;
++  scanner->cache_size = 0;
++  scanner->cache_base = NULL;
++  scanner->cache_p = NULL;
++  scanner->cache_flags = 0;
++#endif /* MAEMO_CHANGES */
++
+   return scanner;
+ }
+ 
+@@ -281,8 +301,21 @@
+   g_hash_table_foreach (scanner->symbol_table, 
+ 			g_scanner_destroy_symbol_table_entry, NULL);
+   g_hash_table_destroy (scanner->symbol_table);
+-  g_scanner_free_value (&scanner->token, &scanner->value);
+-  g_scanner_free_value (&scanner->next_token, &scanner->next_value);
++#ifdef MAEMO_CHANGES
++  if (scanner->cache_base != NULL)
++    {
++      munmap (scanner->cache_base, scanner->cache_size);
++    }
++  else
++    {
++#endif /* MAEMO_CHANGES */
++      g_scanner_free_value (&scanner->token, &scanner->value);
++      g_scanner_free_value (&scanner->next_token, &scanner->next_value);
++#ifdef MAEMO_CHANGES
++    }
++  if (scanner->cache_fd != -1)
++    close (scanner->cache_fd);
++#endif /* MAEMO_CHANGES */
+   g_free (scanner->config);
+   g_free (scanner->buffer);
+   g_free (scanner);
+@@ -296,7 +329,11 @@
+   g_return_if_fail (scanner != NULL);
+   
+   _g_fprintf (stderr, "%s:%d: ",
+-	      scanner->input_name ? scanner->input_name : "<memory>",
++#ifdef MAEMO_CHANGES
++	      INPUT_NAME (scanner),
++#else
++              scanner->input_name ? scanner->input_name : "<memory>",
++#endif /* MAEMO_CHANGES */
+ 	      scanner->line);
+   if (is_error)
+     _g_fprintf (stderr, "error: ");
+@@ -557,6 +594,93 @@
+   g_hash_table_foreach (scanner->symbol_table, g_scanner_foreach_internal, d);
+ }
+ 
++#ifdef MAEMO_CHANGES
++static gboolean
++g_scanner_get_token_cache (GScanner    *scanner,
++                           GTokenType  *token_p,
++                           GTokenValue *value_p,
++                           guint       *line_p,
++                           guint       *position_p)
++{
++  gint len;
++
++  if (scanner->cache_p == NULL)
++    return FALSE;
++
++  if (scanner->cache_p == scanner->cache_end)
++    {
++      *token_p = G_TOKEN_EOF;
++      return TRUE;
++    }
++
++#define ENSURE_AVAILABLE(scanner, bytes) \
++  if (scanner->cache_p + (bytes) > scanner->cache_end) \
++    goto eof
++
++  ENSURE_AVAILABLE(scanner, sizeof(GTokenType));
++
++  *token_p = *(GTokenType *) scanner->cache_p;
++  scanner->cache_p += sizeof (GTokenType);
++
++  switch (*token_p)
++    {
++    case G_TOKEN_STRING:
++    case G_TOKEN_IDENTIFIER:
++    case G_TOKEN_IDENTIFIER_NULL:
++    case G_TOKEN_COMMENT_SINGLE:
++    case G_TOKEN_COMMENT_MULTI:
++      ENSURE_AVAILABLE (scanner, sizeof (gint));
++
++      len = *(gint *) scanner->cache_p;
++      scanner->cache_p += sizeof (gint);
++
++      ENSURE_AVAILABLE (scanner, len);
++
++      value_p->v_string = (gchar *) scanner->cache_p;
++      scanner->cache_p += len;
++      break;
++
++    case G_TOKEN_ERROR:
++    case G_TOKEN_EOF:
++      break;
++
++    case G_TOKEN_LEFT_PAREN:
++    case G_TOKEN_RIGHT_PAREN:
++    case G_TOKEN_LEFT_CURLY:
++    case G_TOKEN_RIGHT_CURLY:
++    case G_TOKEN_LEFT_BRACE:
++    case G_TOKEN_RIGHT_BRACE:
++    case G_TOKEN_EQUAL_SIGN:
++    case G_TOKEN_COMMA:
++      value_p->v_int64 = *token_p;
++      break;
++
++    default:
++      if (*token_p < G_TOKEN_LAST)
++	{
++          ENSURE_AVAILABLE (scanner, sizeof (GTokenValue));
++
++/*	  *value_p = *(GTokenValue *)scanner->cache_p;*/
++          memcpy (value_p, scanner->cache_p, sizeof (GTokenValue));
++	  scanner->cache_p += sizeof (GTokenValue);
++	}
++      else
++	value_p->v_int64 = 0;
++
++      break;
++    }
++
++  return TRUE;
++
++eof:
++  *token_p = G_TOKEN_ERROR;
++  value_p->v_error = G_ERR_UNEXP_EOF;
++  return TRUE;
++
++#undef ENSURE_AVAILABLE
++}
++#endif /* MAEMO_CHANGES */
++
+ GTokenType
+ g_scanner_peek_next_token (GScanner	*scanner)
+ {
+@@ -566,16 +690,141 @@
+     {
+       scanner->next_line = scanner->line;
+       scanner->next_position = scanner->position;
+-      g_scanner_get_token_i (scanner,
+-			     &scanner->next_token,
+-			     &scanner->next_value,
+-			     &scanner->next_line,
+-			     &scanner->next_position);
++
++#ifdef MAEMO_CHANGES
++      if (!g_scanner_get_token_cache (scanner,
++                                      &scanner->next_token,
++                                      &scanner->next_value,
++                                      &scanner->next_line,
++                                      &scanner->next_position))
++        {
++#endif /* MAEMO_CHANGES */
++          g_scanner_get_token_i (scanner,
++                                 &scanner->next_token,
++                                 &scanner->next_value,
++                                 &scanner->next_line,
++                                 &scanner->next_position);
++#ifdef MAEMO_CHANGES
++        }
++#endif /* MAEMO_CHANGES */
+     }
+   
+   return scanner->next_token;
+ }
+ 
++#ifdef MAEMO_CHANGES
++static void
++g_scanner_cache_token (GScanner *scanner)
++{
++  gint count;
++
++  if (scanner->cache_fd == -1 || scanner->cache_p != NULL)
++    return;
++
++  if (scanner->token == G_TOKEN_ERROR)
++    g_error ("%s: rc file parse error while writing cache for '%s'. Aborting.",
++             G_STRFUNC, INPUT_NAME (scanner));
++
++  do
++    {
++      count = write (scanner->cache_fd, &scanner->token,
++                     sizeof (scanner->token));
++    }
++  while (count == -1 && (errno == EINTR || errno == EAGAIN));
++
++  if (count != sizeof (scanner->token))
++    g_error ("%s: error while writing cache for '%s': %s. Aborting.",
++             G_STRFUNC, INPUT_NAME (scanner), g_strerror (errno));
++
++#define G_SCANNER_CACHE_MEM_ALIGN (MAX (sizeof (double), sizeof (void)))
++
++  switch (scanner->token)
++    {
++      gint len;
++      gint lena;
++
++    case G_TOKEN_STRING:
++    case G_TOKEN_IDENTIFIER:
++    case G_TOKEN_IDENTIFIER_NULL:
++    case G_TOKEN_COMMENT_SINGLE:
++    case G_TOKEN_COMMENT_MULTI:
++      /* pad strings to multiple of G_SCANNER_CACHE_MEM_ALIGN */
++      lena = len = strlen (scanner->value.v_string) + 1;
++      if (lena % G_SCANNER_CACHE_MEM_ALIGN)
++        lena += G_SCANNER_CACHE_MEM_ALIGN - (lena % G_SCANNER_CACHE_MEM_ALIGN);
++
++      do
++        {
++          count = write (scanner->cache_fd, &lena, sizeof (lena));
++        }
++      while (count == -1 && (errno == EINTR || errno == EAGAIN));
++
++      if (count != sizeof (lena))
++        g_error ("%s: error while writing cache for '%s': %s. Aborting.",
++                 G_STRFUNC, INPUT_NAME (scanner), g_strerror (errno));
++
++      do
++        {
++          count = write (scanner->cache_fd, scanner->value.v_string, len);
++        }
++      while (count == -1 && (errno == EINTR || errno == EAGAIN));
++
++      if (count != len)
++        g_error ("%s: error while writing cache for '%s': %s. Aborting.",
++                 G_STRFUNC, INPUT_NAME (scanner), g_strerror (errno));
++
++      if (lena > len)
++        {
++          do
++            {
++              count = write (scanner->cache_fd, "\0\0\0\0\0\0\0\0", lena - len);
++            }
++          while (count == -1 && (errno == EINTR || errno == EAGAIN));
++
++          if (count != lena - len)
++            g_error ("%s: error while writing cache for '%s': %s. Aborting.",
++                     G_STRFUNC, INPUT_NAME (scanner), g_strerror (errno));
++        }
++      break;
++
++    case G_TOKEN_EOF:
++      if (close (scanner->cache_fd) == -1)
++        g_error ("%s: error while writing cache for '%s': %s. Aborting.",
++                 G_STRFUNC, INPUT_NAME (scanner), g_strerror (errno));
++      scanner->cache_fd = -1;
++      break;
++
++    case G_TOKEN_LEFT_PAREN:
++    case G_TOKEN_RIGHT_PAREN:
++    case G_TOKEN_LEFT_CURLY:
++    case G_TOKEN_RIGHT_CURLY:
++    case G_TOKEN_LEFT_BRACE:
++    case G_TOKEN_RIGHT_BRACE:
++    case G_TOKEN_EQUAL_SIGN:
++    case G_TOKEN_COMMA:
++      break;
++
++    default:
++      if (scanner->token < G_TOKEN_LAST)
++        {
++          do
++            {
++              count = write (scanner->cache_fd, &scanner->value,
++                             sizeof (scanner->value));
++            }
++          while (count == -1 && (errno == EINTR || errno == EAGAIN));
++
++          if (count != sizeof (scanner->value))
++            g_error ("%s: error while writing cache for '%s': %s. Aborting.",
++                     G_STRFUNC, INPUT_NAME (scanner), g_strerror (errno));
++        }
++      else
++        g_assert (scanner->token == scanner->value.v_int);
++      break;
++    }
++}
++#endif /* MAEMO_CHANGES */
++
+ GTokenType
+ g_scanner_get_next_token (GScanner	*scanner)
+ {
+@@ -583,7 +832,10 @@
+   
+   if (scanner->next_token != G_TOKEN_NONE)
+     {
+-      g_scanner_free_value (&scanner->token, &scanner->value);
++#ifdef MAEMO_CHANGES
++      if (scanner->cache_p == NULL)
++#endif /* MAEMO_CHANGES */
++        g_scanner_free_value (&scanner->token, &scanner->value);
+       
+       scanner->token = scanner->next_token;
+       scanner->value = scanner->next_value;
+@@ -591,12 +843,27 @@
+       scanner->position = scanner->next_position;
+       scanner->next_token = G_TOKEN_NONE;
+     }
++#ifdef MAEMO_CHANGES
++  else if (g_scanner_get_token_cache (scanner,
++				      &scanner->token,
++				      &scanner->value,
++				      &scanner->line,
++				      &scanner->position))
++    {
++      return scanner->token;
++    }
++#endif /* MAEMO_CHANGES */
+   else
+     g_scanner_get_token_i (scanner,
+-			   &scanner->token,
+-			   &scanner->value,
+-			   &scanner->line,
+-			   &scanner->position);
++                           &scanner->token,
++                           &scanner->value,
++                           &scanner->line,
++                           &scanner->position);
++
++#ifdef MAEMO_CHANGES
++  if (scanner->cache_flags & HILDON_SCANNER_CACHE_FLAGS_WRITE)
++    g_scanner_cache_token (scanner);
++#endif /* MAEMO_CHANGES */
+   
+   return scanner->token;
+ }
+@@ -649,6 +916,79 @@
+   return scanner->token == G_TOKEN_EOF || scanner->token == G_TOKEN_ERROR;
+ }
+ 
++#ifdef MAEMO_CHANGES
++void
++hildon_g_scanner_cache_open (GScanner    *scanner,
++                             const gchar *filename)
++{
++  gchar       *filename_cache;
++  struct stat  st_rc;
++  struct stat  st_cache;
++  gint         fd;
++  gpointer     cache_p = NULL;
++  gsize        cache_size = 0;
++
++  g_return_if_fail (scanner != NULL);
++  g_return_if_fail (filename != NULL);
++
++  if (fstat (scanner->input_fd, &st_rc) == -1)
++    return;
++
++  filename_cache = g_strconcat (filename, ".cache", NULL);
++
++  /* FIXME: create cache only if explicitly asked for (to be used by a
++   * standalone application, for example.)  The cache filename should
++   * also be derived from the gtkrc path, but it's not available
++   * without modifications to gtk+
++   */
++
++  if (getenv ("HILDON_SCANNER_CACHE_CREATE"))
++    {
++      /* we don't care if this file exists or not, just delete it */
++      g_remove (filename_cache);
++
++      fd = g_open (filename_cache, O_CREAT|O_EXCL|O_WRONLY|O_TRUNC, 0666);
++
++      if (fd != -1)
++        scanner->cache_flags |= HILDON_SCANNER_CACHE_FLAGS_WRITE;
++      else
++        g_printerr ("%s: error while writing cache: %s. Not creating cache.",
++                    G_STRFUNC, g_strerror (errno));
++    }
++  else
++    {
++      fd = g_open (filename_cache, O_RDONLY);
++      if (fd != -1)
++        {
++          if (fstat (fd, &st_cache) == 0 &&
++              st_rc.st_mtime <= st_cache.st_mtime)
++            {
++              gpointer ptr;
++
++              ptr = mmap (NULL, st_cache.st_size, PROT_READ, MAP_SHARED, fd, 0);
++              if (ptr != MAP_FAILED)
++                {
++                  cache_p = ptr;
++                  cache_size = st_cache.st_size;
++                }
++            }
++
++          /* after mmap the file descriptor is no longer needer */
++          close (fd);
++          fd = -1;
++        }
++    }
++
++  g_free (filename_cache);
++
++  scanner->cache_fd = fd;
++  scanner->cache_size = cache_size;
++  scanner->cache_base = cache_p;
++  scanner->cache_p = cache_p;
++  scanner->cache_end = cache_p + cache_size;
++}
++#endif /* MAEMO_CHANGES */
++
+ void
+ g_scanner_input_file (GScanner *scanner,
+ 		      gint	input_fd)
+diff -ur aaa/glib/gscanner.h bbb/glib/gscanner.h
+--- aaa/glib/gscanner.h	2012-03-12 01:43:28.000000000 +0400
++++ bbb/glib/gscanner.h	2012-07-16 21:51:22.900736561 +0400
+@@ -124,6 +124,14 @@
+   guint		v_error;
+ };
+ 
++#ifdef MAEMO_CHANGES
++/* cache flags, private */
++typedef enum
++{
++  HILDON_SCANNER_CACHE_FLAGS_WRITE   = 1
++} HildonScannerCacheFlags;
++#endif /* MAEMO_CHANGES */
++
+ struct	_GScannerConfig
+ {
+   /* Character sets
+@@ -204,12 +212,26 @@
+   
+   /* handler function for _warn and _error */
+   GScannerMsgFunc	msg_handler;
++
++#ifdef MAEMO_CHANGES
++  /* caching, private */
++  gint                    cache_fd;
++  HildonScannerCacheFlags cache_flags;
++  gsize                   cache_size;
++  gpointer                cache_base;
++  const gchar            *cache_p;
++  const gchar            *cache_end;
++#endif /* MAEMO_CHANGES */
+ };
+ 
+ GScanner*	g_scanner_new			(const GScannerConfig *config_templ);
+ void		g_scanner_destroy		(GScanner	*scanner);
+ void		g_scanner_input_file		(GScanner	*scanner,
+ 						 gint		input_fd);
++#ifdef MAEMO_CHANGES
++void            hildon_g_scanner_cache_open     (GScanner       *scanner,
++                                                 const gchar    *filename);
++#endif /* MAEMO_CHANGES */
+ void		g_scanner_sync_file_offset	(GScanner	*scanner);
+ void		g_scanner_input_text		(GScanner	*scanner,
+ 						 const	gchar	*text,
+diff -ur aaa/glib/gunicode.h bbb/glib/gunicode.h
+--- aaa/glib/gunicode.h	2012-03-12 01:43:28.000000000 +0400
++++ bbb/glib/gunicode.h	2012-07-16 21:56:19.280734820 +0400
+@@ -572,6 +572,14 @@
+                                              gsize    *result_len) G_GNUC_MALLOC;
+ #endif
+ 
++/* Compute canonical decomposition of a character.  Fills buffer with a
++   string of Unicode characters.  RESULT_LEN is set to the resulting
++   length of the string.  */
++gboolean g_unicode_canonical_decomposition_to_buffer (gunichar  ch,
++                                                      gunichar *out,
++                                                      gsize     out_len,
++				                      gsize    *result_len);
++
+ /* Array of skip-bytes-per-initial character.
+  */
+ GLIB_VAR const gchar * const g_utf8_skip;
+diff -ur aaa/glib/gunidecomp.c bbb/glib/gunidecomp.c
+--- aaa/glib/gunidecomp.c	2012-03-12 01:43:29.000000000 +0400
++++ bbb/glib/gunidecomp.c	2012-07-16 21:58:29.690734055 +0400
+@@ -268,6 +268,78 @@
+   return r;
+ }
+ 
++/**
++ * g_unicode_canonical_decomposition_to_buffer:
++ * @ch: a Unicode character.
++ * @out: a buffer to store the decomposited string of unicode characters
++ * @out_len: the size of the buffer
++ * @result_len: location to store the length of the return value.
++ *
++ * Computes the canonical decomposition of a Unicode character,
++ * storing the result in @out if it is large enough. If @out is
++ * too small, FALSE is returned and the function should be called
++ * again with a buffer of size @result_len.
++ *
++ * Return value: TRUE if @out was large enough
++ *
++ * Since: maemo
++ **/
++gboolean
++g_unicode_canonical_decomposition_to_buffer (gunichar  ch,
++                                             gunichar *out,
++                                             gsize     out_len,
++				             gsize    *result_len)
++{
++  const gchar *decomp;
++  const gchar *p;
++
++  /* Hangul syllable */
++  if (ch >= 0xac00 && ch <= 0xd7a3)
++    {
++      decompose_hangul (ch, NULL, result_len);
++
++      if (*result_len <= out_len)
++        {
++          decompose_hangul (ch, out, result_len);
++
++          return TRUE;
++        }
++      else
++        return FALSE;
++    }
++  else if ((decomp = find_decomposition (ch, FALSE)) != NULL)
++    {
++      /* Found it.  */
++      int i;
++
++      *result_len = g_utf8_strlen (decomp, -1);
++
++      if (*result_len <= out_len)
++        {
++          for (p = decomp, i = 0; *p != '\0'; p = g_utf8_next_char (p), i++)
++            out[i] = g_utf8_get_char (p);
++
++          return TRUE;
++        }
++      else
++        return FALSE;
++    }
++  else
++    {
++      /* Not in our table.  */
++      *result_len = 1;
++
++      if (out_len >= 1)
++        {
++          *out = ch;
++
++          return TRUE;
++        }
++      else
++        return FALSE;
++    }
++}
++
+ /* L,V => LV and LV,T => LVT  */
+ static gboolean
+ combine_hangul (gunichar a,
+diff -ur aaa/glib/gutils.c bbb/glib/gutils.c
+--- aaa/glib/gutils.c	2012-07-16 21:02:37.680753745 +0400
++++ bbb/glib/gutils.c	2012-07-16 22:47:27.770716795 +0400
+@@ -1638,6 +1638,7 @@
+ static  gchar  **g_system_config_dirs = NULL;
+ 
+ static  gchar  **g_user_special_dirs = NULL;
++static  GHashTable *g_user_named_dirs = NULL;
+ 
+ /* fifteen minutes of fame for everybody */
+ #define G_USER_DIRS_EXPIRE      15 * 60
+@@ -2624,6 +2625,7 @@
+     {
+       gchar *buffer = lines[i];
+       gchar *d, *p;
++      gchar *key;
+       gint len;
+       gboolean is_relative = FALSE;
+       GUserDirectory directory;
+@@ -2637,6 +2639,8 @@
+       while (*p == ' ' || *p == '\t')
+ 	p++;
+       
++      key = p;
++
+       if (strncmp (p, "XDG_DESKTOP_DIR", strlen ("XDG_DESKTOP_DIR")) == 0)
+         {
+           directory = G_USER_DIRECTORY_DESKTOP;
+@@ -2678,13 +2682,20 @@
+           p += strlen ("XDG_VIDEOS_DIR");
+         }
+       else
+-	continue;
++        {
++          directory = G_USER_N_DIRECTORIES;
++          while (*p != '=' && *p != '\0')
++            p++;
++        }
+ 
+       while (*p == ' ' || *p == '\t')
+ 	p++;
+ 
+       if (*p != '=')
+ 	continue;
++
++      *p = '\0';
++
+       p++;
+ 
+       while (*p == ' ' || *p == '\t')
+@@ -2717,10 +2728,18 @@
+       if (is_relative)
+         {
+           g_get_any_init ();
+-          g_user_special_dirs[directory] = g_build_filename (g_home_dir, d, NULL);
++          if (directory < G_USER_N_DIRECTORIES)
++            g_user_special_dirs[directory] = g_build_filename (g_home_dir, d, NULL);
++          g_hash_table_insert (g_user_named_dirs, g_strdup (key),
++            g_build_filename (g_home_dir, d, NULL));
+         }
+       else
+-	g_user_special_dirs[directory] = g_strdup (d);
++        {
++          if (directory < G_USER_N_DIRECTORIES)
++            g_user_special_dirs[directory] = g_strdup (d);
++          g_hash_table_insert (g_user_named_dirs, g_strdup (key), g_strdup (d));
++        }
++
+     }
+ 
+   g_strfreev (lines);
+@@ -2729,6 +2748,33 @@
+ 
+ #endif /* G_OS_UNIX && !HAVE_CARBON */
+ 
++static void
++g_ensure_user_special_dirs ()
++{
++  G_LOCK (g_utils_global);
++
++  if (G_UNLIKELY (g_user_special_dirs == NULL))
++    {
++      g_user_named_dirs = g_hash_table_new_full (
++        g_str_hash, g_str_equal, g_free, g_free);
++      g_user_special_dirs = g_new0 (gchar *, G_USER_N_DIRECTORIES);
++
++      load_user_special_dirs ();
++
++      /* Special-case desktop for historical compatibility */
++      if (g_user_special_dirs[G_USER_DIRECTORY_DESKTOP] == NULL)
++        {
++          g_get_any_init ();
++
++          g_user_special_dirs[G_USER_DIRECTORY_DESKTOP] =
++            g_build_filename (g_home_dir, "Desktop", NULL);
++          g_hash_table_insert (g_user_named_dirs, g_strdup ("XDG_DESKTOP_DIR"),
++            g_build_filename (g_home_dir, "Desktop", NULL));
++        }
++    }
++
++  G_UNLOCK (g_utils_global);
++}
+ 
+ /**
+  * g_reload_user_special_dirs_cache:
+@@ -2793,9 +2839,7 @@
+  * falls back to <filename>$HOME/Desktop</filename> when XDG special
+  * user directories have not been set up. 
+  *
+- * Depending on the platform, the user might be able to change the path
+- * of the special directory without requiring the session to restart; GLib
+- * will not reflect any change once the special directories are loaded.
++ * See hildon_get_user_named_dir() for a more generic version of this function.
+  *
+  * Return value: the path to the specified special directory, or %NULL
+  *   if the logical id was not found. The returned string is owned by
+@@ -2809,27 +2853,37 @@
+   g_return_val_if_fail (directory >= G_USER_DIRECTORY_DESKTOP &&
+                         directory < G_USER_N_DIRECTORIES, NULL);
+ 
+-  G_LOCK (g_utils_global);
+-
+-  if (G_UNLIKELY (g_user_special_dirs == NULL))
+-    {
+-      g_user_special_dirs = g_new0 (gchar *, G_USER_N_DIRECTORIES);
+-
+-      load_user_special_dirs ();
+-
+-      /* Special-case desktop for historical compatibility */
+-      if (g_user_special_dirs[G_USER_DIRECTORY_DESKTOP] == NULL)
+-        {
+-          g_get_any_init ();
++  g_ensure_user_special_dirs ();
+ 
+-          g_user_special_dirs[G_USER_DIRECTORY_DESKTOP] =
+-            g_build_filename (g_home_dir, "Desktop", NULL);
+-        }
+-    }
++  return g_user_special_dirs[directory];
++}
+ 
+-  G_UNLOCK (g_utils_global);
++/**
++ * hildon_get_user_named_dir:
++ * @directory: the string id of a named directory
++ *
++ * Returns the full path of a named directory using its string id, such
++ * as for example "XDG_DOWNLOAD_DIR".
++ *
++ * On Unix this is done through the XDG special user directories which
++ * are read from ~/.config/user-dirs.dir and /etc/xdg/user-dirs.conf.
++ *
++ * Depending on the platform, the user might be able to change the path
++ * of the special directory without requiring the session to restart; GLib
++ * will not reflect any change once the special directories are loaded.
++ *
++ * Return value: the path to the specified special directory, or %NULL
++ *   if the string id was not found. The returned string is owned by
++ *   GLib and should not be modified or freed.
++ *
++ * Since: 2.22
++ */
++const gchar *
++hildon_get_user_named_dir (const gchar* directory)
++{
++  g_ensure_user_special_dirs ();
+ 
+-  return g_user_special_dirs[directory];
++  return g_hash_table_lookup (g_user_named_dirs, directory);
+ }
+ 
+ #ifdef G_OS_WIN32
+diff -ur aaa/glib/gutils.h bbb/glib/gutils.h
+--- aaa/glib/gutils.h	2012-03-12 01:43:29.000000000 +0400
++++ bbb/glib/gutils.h	2012-07-16 22:15:10.790728174 +0400
+@@ -196,6 +196,8 @@
+ 
+ const gchar * g_get_user_special_dir (GUserDirectory directory);
+ 
++const gchar* hildon_get_user_named_dir (const gchar* directory);
++
+ /**
+  * GDebugKey:
+  * @key: the string
