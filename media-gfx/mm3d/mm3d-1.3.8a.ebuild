@@ -21,6 +21,6 @@ RDEPEND="media-libs/mesa
 DEPEND="${RDEPEND}"
 
 src_install() {
-	into /usr
-	dobin src/mm3d || die
+	emake DESTDIR="${D}" install
 }
+

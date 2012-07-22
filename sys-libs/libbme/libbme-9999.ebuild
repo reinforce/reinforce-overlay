@@ -25,6 +25,12 @@ src_prepare() {
 	eautoreconf
 }
 
+src_configure() {
+	local myconf="$(use_with pic)"
+
+	econf ${myconf}
+}
+
 src_install() {
 	emake DESTDIR="${D}" install
 }

@@ -12,7 +12,7 @@ SLOT="0"
 LICENSE="GPLv2"
 
 KEYWORDS="~x86 ~amd64 ~arm"
-IUSE=""
+IUSE="doc pic examples debug"
 
 EGIT_REPO_URI="https://github.com/Cordia/libhildon.git"
 EGIT_SOURCEDIR="${S}"
@@ -23,8 +23,10 @@ RDEPEND="x11-libs/libX11
 	x11-libs/libXt
 	x11-libs/gtk+:3
 	media-libs/libcanberra
-	sys-apps/dbus[X]
-	dev-util/gtk-doc"
+	dev-util/gtk-doc-am
+	doc? ( 
+		dev-util/gtk-doc
+		app-text/docbook-xml-dtd )"
 
 DEPEND="${RDEPEND}"
 
@@ -34,6 +36,16 @@ src_prepare() {
 	sed -i -e '/^#pragma GCC diagnostic ignored "-Wuninitialized"/d' hildon/hildon-touch-selector-entry.c || die
 	sed -i -e '/^#pragma GCC diagnostic pop/d' hildon/hildon-touch-selector-entry.c || die
 }
+
+src_configure() {
+	local myconf="$(use_enable doc gtk-doc)
+		$(use_enable debug)
+		$(use_with pic)
+		$(use_with examples)"
+
+	econf ${myconf}
+}
+
 
 src_install() {
 	emake DESTDIR="${D}" install

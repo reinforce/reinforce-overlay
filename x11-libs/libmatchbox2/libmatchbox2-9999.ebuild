@@ -12,17 +12,19 @@ SLOT="0"
 LICENSE="GPLv2"
 
 KEYWORDS="~x86 ~amd64 ~arm"
-IUSE=""
+IUSE="pic gtk doc pango png"
 
 EGIT_REPO_URI="https://github.com/Cordia/libmatchbox2.git"
 EGIT_SOURCEDIR="${S}"
 EGIT_BRANCH="clutter_0_8"
 
-RDEPEND="x11-libs/libX11
-	x11-libs/libXext
-	x11-libs/libXt
-	media-libs/clutter
-	dev-util/gtk-doc"
+RDEPEND="media-libs/clutter
+        dev-util/gtk-doc-am
+        doc? (
+		dev-util/gtk-doc
+		app-text/docbook-xml-dtd )
+	gtk? ( x11-libs/gtk+ )
+	pango? ( x11-libs/pango )"
 
 DEPEND="${RDEPEND}"
 
@@ -30,6 +32,19 @@ src_prepare() {
 	eautoreconf
 	epatch "${FILESDIR}"/XKeycodeToKeysym.patch
 }
+
+src_configure() {
+        local myconf="$(use_enable doc gtk-doc)
+		$(use_enable debug)
+		$(use_with pic)
+		$(use_with gtk)
+		$(use_with pango)
+		$(use_enable png png-theme)"
+
+	econf ${myconf}
+}
+		
+
 
 src_install() {
 	emake DESTDIR="${D}" install

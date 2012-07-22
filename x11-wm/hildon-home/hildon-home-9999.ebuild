@@ -12,25 +12,36 @@ SLOT="0"
 LICENSE="GPLv2"
 
 KEYWORDS="~x86 ~amd64 ~arm"
-IUSE=""
+IUSE="+X pic debug maemo"
 
 EGIT_REPO_URI="https://github.com/Cordia/hildon-home.git"
 EGIT_SOURCEDIR="${S}"
 EGIT_BRANCH="cssu_tracker"
 
-RDEPEND="x11-libs/libX11
-	x11-libs/libXext
-	x11-libs/libXt
-	media-libs/clutter:0.8
+RDEPEND="media-libs/clutter:0.8
 	media-libs/libosso
 	x11-libs/gtk+
 	x11-libs/libhildon
 	x11-libs/libhildondesktop
 	x11-libs/libmatchbox2
-	sys-apps/dbus[X]"
+	X? ( x11-libs/libX11 )"
 
 DEPEND="${RDEPEND}"
 
 src_prepare() {
 	eautoreconf
+}
+
+src_configure() {
+	local myconf="$(use_with pic)
+		$(use_with X x)
+		$(use_enable debug)
+		$(use_enable maemo-launcher)"
+
+	econf ${myconf}
+}
+
+
+src_install() {
+	emake DESTDIR="${D}" install
 }

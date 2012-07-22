@@ -12,7 +12,7 @@ SLOT="0"
 LICENSE="GPLv2"
 
 KEYWORDS="~x86 ~amd64 ~arm"
-IUSE=""
+IUSE="pic "
 
 EGIT_REPO_URI="git://gitorious.org/meego-middleware/libiphb.git"
 EGIT_SOURCEDIR="${S}"
@@ -23,6 +23,12 @@ DEPEND="${RDEPEND}"
 
 src_prepare() {
 	eautoreconf
+}
+
+src_configure() {
+	local myconf="$(use_with pic)"
+
+	econf ${myconf}
 }
 
 src_install() {

@@ -12,16 +12,13 @@ SLOT="0"
 LICENSE="GPLv2"
 
 KEYWORDS="~x86 ~amd64 ~arm"
-IUSE=""
+IUSE="pic maemo"
 
 EGIT_REPO_URI="https://github.com/Cordia/hildon-desktop.git"
 EGIT_SOURCEDIR="${S}"
 EGIT_BRANCH="cssu_tracker"
 
-RDEPEND="x11-libs/libX11
-	x11-libs/libXext
-	x11-libs/libXt
-	x11-libs/gtk+
+RDEPEND="x11-libs/gtk+
 	x11-libs/libhildon
 	x11-libs/libhildondesktop
 	x11-libs/libmatchbox2
@@ -36,6 +33,13 @@ DEPEND="${RDEPEND}"
 src_prepare() {
 	eautoreconf
 	epatch "${FILESDIR}"/maemo_changes.patch
+}
+
+src_configure() {
+	local myconf="$(use_with pic)
+		$(use_enable maemo maemo-launcher)"
+
+	econf ${myconf}
 }
 
 src_install() {

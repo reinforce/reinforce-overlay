@@ -12,19 +12,33 @@ SLOT="0"
 LICENSE="GPLv2"
 
 KEYWORDS="~x86 ~amd64 ~arm"
-IUSE=""
+IUSE="+X pic doc debug"
 
 EGIT_REPO_URI="https://github.com/Cordia/libhildondesktop.git"
 EGIT_SOURCEDIR="${S}"
 EGIT_BRANCH="master"
 
 RDEPEND="x11-libs/libhildon
-	sys-libs/libiphb"
+	sys-libs/libiphb
+	dev-util/gtk-doc-am
+        doc? (
+                dev-util/gtk-doc
+                app-text/docbook-xml-dtd )
+	X? ( x11-libs/libX11 )"
 
 DEPEND="${RDEPEND}"
 
 src_prepare() {
 	eautoreconf
+}
+
+src_configure() {
+	local myconf="$(use_enable doc gtk-doc)
+		$(use_with X x)
+		$(use_with pic)
+		$(use_enable debug)"
+
+	econf ${myconf}
 }
 
 src_install() {
