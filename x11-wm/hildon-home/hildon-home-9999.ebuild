@@ -18,7 +18,7 @@ EGIT_REPO_URI="https://github.com/Cordia/hildon-home.git"
 EGIT_SOURCEDIR="${S}"
 EGIT_BRANCH="cssu_tracker"
 
-RDEPEND="media-libs/clutter:0.8
+RDEPEND="media-libs/clutter
 	media-libs/libosso
 	x11-libs/gtk+
 	x11-libs/libhildon
