@@ -5,8 +5,8 @@
 EAPI="3"
 inherit eutils git-2 autotools
 
-DESCRIPTION=""
-HOMEPAGE="http://maemo.gitorious.org/fremantle-hildon-desktop/libosso"
+DESCRIPTION="libosso contains some dbus interface wrappers for applications"
+HOMEPAGE="http://maemo.gitorious.org/maemo-af/libosso"
 
 SLOT="0"
 LICENSE="GPLv2"
@@ -14,7 +14,7 @@ LICENSE="GPLv2"
 KEYWORDS="~x86 ~amd64 ~arm"
 IUSE="pic debug"
 
-EGIT_REPO_URI="https://git.gitorious.org/fremantle-hildon-desktop/libosso.git"
+EGIT_REPO_URI="https://git.gitorious.org/maemo-af/libosso.git"
 EGIT_SOURCEDIR="${S}"
 EGIT_BRANCH="master"
 
