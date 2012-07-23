@@ -18,7 +18,7 @@ EGIT_REPO_URI="https://git.gitorious.org/meego-middleware/mce-dev.git"
 EGIT_SOURCEDIR="${S}"
 EGIT_BRANCH="master"
 
-RDEPEND=""
+RDEPEND="app-doc/doxygen"
 DEPEND="${RDEPEND}"
 
 src_compile() {

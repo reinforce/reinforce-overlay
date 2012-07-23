@@ -18,9 +18,10 @@ EGIT_REPO_URI="git://gitorious.org/meego-middleware/mce.git"
 EGIT_SOURCEDIR="${S}"
 EGIT_BRANCH="master"
 
-RDEPEND="app-misc/mce-dev
+RDEPEND="app-doc/doxygen
+	app-misc/mce-dev
 	sys-libs/libdsme
-	>=sys-kernel/linux-headers-3.4-r1"
+	sys-kernel/linux-headers"
 
 DEPEND="${RDEPEND}"
 
