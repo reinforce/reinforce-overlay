@@ -30,19 +30,18 @@ RDEPEND="media-libs/clutter
 DEPEND="${RDEPEND}"
 
 src_prepare() {
-	eautoreconf
 	epatch "${FILESDIR}"/hildon-home.patch
+	eautoreconf
 }
 
 src_configure() {
 	local myconf="$(use_with pic)
 		$(use_with X x)
 		$(use_enable debug)
-		$(use_enable maemo-launcher)"
+		$(use_enable maemo maemo-launcher)"
 
 	econf ${myconf}
 }
-
 
 src_install() {
 	emake DESTDIR="${D}" install
