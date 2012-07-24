@@ -24,12 +24,14 @@ RDEPEND="media-libs/clutter
 	x11-libs/libhildon
 	x11-libs/libhildondesktop
 	x11-libs/libmatchbox2
+	dev-db/sqlite:3
 	X? ( x11-libs/libX11 )"
 
 DEPEND="${RDEPEND}"
 
 src_prepare() {
 	eautoreconf
+	epatch "${FILESDIR}"/hildon-home.patch
 }
 
 src_configure() {
