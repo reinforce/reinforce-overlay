@@ -33,7 +33,7 @@ SRC_URI="${SRC_URI}
 
 LICENSE="LGPL-2.1"
 SLOT="0"
-IUSE="alsa capi cups custom-cflags elibc_glibc fontconfig +gecko gnutls gphoto2 gsm gstreamer hardened jpeg lcms ldap +mono mp3 ncurses nls odbc openal opencl +opengl +oss +perl png pulseaudio samba scanner selinux ssl test +threads +truetype udisks v4l +win32 +win64 +X xcomposite xinerama xml"
+IUSE="alsa capi cups custom-cflags elibc_glibc fontconfig +gecko gnutls gphoto2 gsm gstreamer hardened jpeg lcms ldap +mono mp3 ncurses nls odbc openal opencl +opengl +oss +perl png pulseaudio samba scanner selinux ssl test +threads +truetype udisks v4l +win32 +win64 +X xcomposite xinerama xml 3gb"
 REQUIRED_USE="elibc_glibc? ( threads )
 	mono? ( || ( win32 !win64 ) )" #286560
 RESTRICT="test" #72375
