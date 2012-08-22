@@ -283,7 +283,7 @@ index 1ffce8d..9f498eb 100644
 +    else if (ret && pcbSize == NULL) 
 +        SetLastError( ERROR_NOACCESS ); 
 +
-+    return (UINT)-1; 
++    return result; 
  }
  
  
