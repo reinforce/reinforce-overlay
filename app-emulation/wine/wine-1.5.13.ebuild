@@ -136,6 +136,7 @@ src_prepare() {
 	epatch "${FILESDIR}"/${PN}-1.1.15-winegcc.patch #260726
 	epatch "${FILESDIR}"/${PN}-1.4_rc2-multilib-portage.patch #395615
 	epatch "${FILESDIR}"/${PN}-1.5.11-osmesa-check.patch #429386
+	epatch "${FILESDIR}"/${PN}-1.5.13-X11-GL-lock.patch #31406
 	epatch "${FILESDIR}"/disable-dynamic-vertex-buffers.patch
 	epatch "${DISTDIR}/${PULSE_PATCH}" #421365
 	epatch_user #282735
