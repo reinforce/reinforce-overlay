@@ -25,7 +25,7 @@ DEPEND="${RDEPEND}
 	>=x11-proto/xcb-proto-1.7-r1"
 
 src_prepare() {
-	epatch "${FILESDIR}"/poll-debug.patch
+	epatch "${FILESDIR}"/fix_deadlock.patch #Fix a multi-thread deadlock. Wine bug 31406
 }
 
 pkg_setup() {
