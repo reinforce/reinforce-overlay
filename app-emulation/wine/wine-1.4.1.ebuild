@@ -1,6 +1,6 @@
 # Copyright 1999-2012 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/app-emulation/wine/wine-1.4.1.ebuild,v 1.3 2012/07/19 13:57:49 scarabeus Exp $
+# $Header: /var/cvsroot/gentoo-x86/app-emulation/wine/wine-1.4.1.ebuild,v 1.6 2012/09/10 06:02:11 tetromino Exp $
 
 EAPI="4"
 
@@ -67,13 +67,15 @@ RDEPEND="truetype? ( >=media-libs/freetype-2.0.0 media-fonts/corefonts )
 		x11-libs/libXi
 		x11-libs/libXmu
 		x11-libs/libXxf86vm
-		x11-apps/xmessage
 	)
 	xinerama? ( x11-libs/libXinerama )
 	alsa? ( media-libs/alsa-lib )
 	cups? ( net-print/cups )
 	opencl? ( virtual/opencl )
-	opengl? ( virtual/opengl )
+	opengl? (
+		virtual/glu
+		virtual/opengl
+	)
 	gsm? ( media-sound/gsm )
 	jpeg? ( virtual/jpeg )
 	ldap? ( net-nds/openldap )
@@ -122,11 +124,16 @@ src_unpack() {
 }
 
 src_prepare() {
+	local md5="$(md5sum server/protocol.def)"
 	epatch "${FILESDIR}"/${PN}-1.1.15-winegcc.patch #260726
 	epatch "${FILESDIR}"/${PN}-1.4_rc2-multilib-portage.patch #395615
-	epatch "${FILESDIR}"/raw-input.patch
+	epatch "${FILESDIR}"/${PN}-1.4.1-raw-input.patch
 	epatch "${FILESDIR}"/disable-dynamic-vertex-buffers.patch
 	epatch_user #282735
+	if [[ "$(md5sum server/protocol.def)" != "${md5}" ]]; then
+		einfo "server/protocol.def was patched; running tools/make_requests"
+		tools/make_requests || die #432348
+	fi
 	eautoreconf
 	sed -i '/^UPDATE_DESKTOP_DATABASE/s:=.*:=true:' tools/Makefile.in || die
 	sed -i '/^MimeType/d' tools/wine.desktop || die #117785
