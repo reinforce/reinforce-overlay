@@ -12,13 +12,21 @@ SRC_URI="http://citylan.dl.sourceforge.net/project/misfitmodel3d/misfitmodel3d-d
 LICENSE="GPLv2"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE=""
+IUSE="X debug"
 
 RDEPEND="media-libs/mesa
 	x11-libs/qt-core
 	x11-libs/qt-gui"
 
 DEPEND="${RDEPEND}"
+
+src_configure() {
+	local myconf="
+		$(use_with X x)"
+	use debug && myconf="${myconf} --enable-debug=yes"
+
+	econf ${myconf}
+}
 
 src_install() {
 	emake DESTDIR="${D}" install
