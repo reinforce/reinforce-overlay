@@ -2,19 +2,18 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI="3"
+EAPI=4
 
 inherit unpacker
 
 DESCRIPTION="Client for Valve Software's Steam content delivery program"
 HOMEPAGE="http://www.steampowered.com/"
-SRC_URI="steam.deb"
+SRC_URI="http://media.steampowered.com/client/installer/steam.deb"
 
-LICENSE="steam"
+LICENSE="Steam"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
 IUSE=""
-RESTRICT="fetch strip"
 
 RDEPEND="sys-libs/glibc
 	sys-apps/dbus
@@ -56,17 +55,27 @@ RDEPEND="sys-libs/glibc
 		app-emulation/emul-linux-x86-opengl
 		app-emulation/emul-linux-x86-soundlibs )"
 
-pkg_nofetch() {
-	einfo "Please visit ${HOMEPAGE}"
-	einfo "and place ${A} in ${DISTDIR}"
-}
-
 src_unpack() {
 	unpack ${A}
-	tar xf ${WORKDIR}/data.tar.gz || die "Unpack failed!"
-	rm ${WORKDIR}/debian-binary
-	rm ${WORKDIR}/control.tar.gz
-	rm ${WORKDIR}/data.tar.gz
+	mkdir ${P}
+	tar xf data.tar.gz -C ${P} || die "Unpack failed!"
+	rm debian-binary
+	rm control.tar.gz
+	rm data.tar.gz
+}
+
+src_prepare() {
+	# Replace [ ] with [[ ]] in /usr/bin/steam
+	sed "s/\[/\[\[/g" -i usr/bin/steam
+	sed "s/\]/\]\]/g" -i usr/bin/steam
+
+	sed "s/;Friends/;Friends;/g" -i usr/share/applications/steam.desktop
+	sed "s/x-scheme-handler\/steam/x-scheme-handler\/steam;/g" -i usr/share/applications/steam.desktop
+
+	# Dirty hack
+	echo "#!/bin/sh" > usr/bin/steam-hack
+	echo "/usr/bin/steam steam://store/" >> usr/bin/steam-hack
+	chmod +x usr/bin/steam-hack
 }
 
 src_install(){
