@@ -13,52 +13,54 @@ SRC_URI="http://media.steampowered.com/client/installer/steam.deb"
 LICENSE="Steam"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE=""
+IUSE="pulseaudio"
 
-RDEPEND="sys-libs/glibc
-	sys-apps/dbus
-	x11-libs/libXrandr
-	x11-libs/libXi
-	x11-libs/libXfixes
-	x11-libs/libXext
-	x11-libs/libX11
-	>=x11-libs/pixman-0.24.4
-	>=x11-libs/cairo-1.6.0
-	>=x11-libs/pango-1.22.0
-	>=x11-libs/gdk-pixbuf-2.22.0
-	>=x11-libs/gtk+-2.24.0
-	>=net-misc/curl-7.16
-	>=net-print/cups-1.4.0
-	>=media-libs/libogg-1.0
-	>=media-libs/libsdl-1.2.10
-	>=media-libs/libtheora-1.0
-	>=media-libs/libvorbis-1.1.2
-	>=media-libs/alsa-lib-1.0.23
-	>=media-libs/fontconfig-0.8.0
-	>=media-libs/freetype-2.3.9
-	>=media-libs/openal-1.13
-	media-libs/libjpeg-turbo
-	media-libs/libpng:1.2
-	>=media-sound/pulseaudio-0.99.1
-	>=dev-libs/glib-2.14.0
-	>=dev-libs/libgcrypt-1.4.5
-	>=dev-libs/nspr-1.8.0.10
-	>=dev-libs/nss-3.12.3
-	sys-libs/libstdc++-v3
-	sys-libs/zlib
-	dev-libs/libappindicator
-	amd64? ( app-emulation/emul-linux-x86-baselibs
-		app-emulation/emul-linux-x86-xlibs
-		app-emulation/emul-linux-x86-gtklibs
-		app-emulation/emul-linux-x86-compat
-		app-emulation/emul-linux-x86-sdl
-		app-emulation/emul-linux-x86-opengl
-		app-emulation/emul-linux-x86-soundlibs )"
+DEPEND=""
+RDEPEND="virtual/opengl
+	x86? (
+		x11-libs/libXext
+		>=x11-libs/libX11-1.5
+		media-libs/libsdl
+		media-libs/libtheora
+		media-libs/libvorbis
+		media-libs/alsa-lib
+		media-libs/libogg
+		x11-libs/gtk+:2
+		media-libs/openal
+		>=x11-libs/pixman-0.24.4
+		x11-libs/cairo
+		dev-libs/libgcrypt
+		net-misc/curl
+		x11-libs/gdk-pixbuf
+		dev-libs/nspr
+		dev-libs/nss
+		x11-libs/pango
+		media-libs/libpng:1.2
+		>=sys-libs/glibc-2.15
+		>=sys-libs/zlib-1.2.4
+		media-libs/libjpeg-turbo
+		>=sys-devel/gcc-4.6
+		net-print/cups
+	)
+	amd64? (
+		>=app-emulation/emul-linux-x86-baselibs-20121028
+		>=app-emulation/emul-linux-x86-gtklibs-20121028
+		>=app-emulation/emul-linux-x86-opengl-20121028
+		>=app-emulation/emul-linux-x86-sdl-20120520
+		>=app-emulation/emul-linux-x86-soundlibs-20121028
+		>=app-emulation/emul-linux-x86-xlibs-20121028
+		>=sys-libs/glibc-2.15[multilib]
+		>=sys-devel/gcc-4.6[multilib]
+	)
+	media-libs/fontconfig
+	media-libs/freetype:2
+	pulseaudio? ( media-sound/pulseaudio )
+	sys-apps/dbus"
 
 src_unpack() {
-	unpack ${A}
+	unpack_deb ${A}
 	mkdir ${P}
-	tar xf data.tar.gz -C ${P} || die "Unpack failed!"
+	mv usr ${P}/usr
 	rm debian-binary
 	rm control.tar.gz
 	rm data.tar.gz
@@ -69,13 +71,9 @@ src_prepare() {
 	sed "s/\[/\[\[/g" -i usr/bin/steam
 	sed "s/\]/\]\]/g" -i usr/bin/steam
 
+	# Fix .desktop
 	sed "s/;Friends/;Friends;/g" -i usr/share/applications/steam.desktop
 	sed "s/x-scheme-handler\/steam/x-scheme-handler\/steam;/g" -i usr/share/applications/steam.desktop
-
-	# Dirty hack
-	echo "#!/bin/sh" > usr/bin/steam-hack
-	echo "/usr/bin/steam steam://store/" >> usr/bin/steam-hack
-	chmod +x usr/bin/steam-hack
 }
 
 src_install(){
