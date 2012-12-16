@@ -82,18 +82,7 @@ src_prepare() {
 
 src_install(){
 	dobin "usr/bin/steam"
-
-	insinto "/usr/lib/"
-	doins -r usr/lib/steam
-
-	dodoc usr/share/doc/steam/changelog.gz
-	doman usr/share/man/man6/steam.6.gz
-
-	insinto /usr/share/applications/
-	doins usr/share/applications/steam.desktop
-
-	insinto /usr/share/icons/
-	doins -r usr/share/icons/
-
-	doicon usr/share/pixmaps/steam.png
+	dodir "usr/"
+	cp -r "usr/share/" "${D}/usr/" || die "Install failed!"
+	cp -r "usr/lib" "${D}/usr/" || die "Install failed!"
 }
