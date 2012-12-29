@@ -1,4 +1,4 @@
-# Copyright 1999-2012 Gentoo Foundation
+# Copyright 1999-2010 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 EAPI=2
@@ -7,14 +7,13 @@ SUPPORT_PYTHON_ABIS=1
 RESTRICT_PYTHON_ABIS="3.*"
 ESVN_SUB_PROJECT="BINDINGS/python"
 inherit enlightenment
-DESCRIPTION="Python bindings for elementary library"
+DESCRIPTION="Python bindings for EVAS library"
 HOMEPAGE="http://www.enlightenment.org/"
-LICENSE="|| ( GPL-3 LGPL-3 )"
+LICENSE="LGPL-2.1"
 IUSE="static-libs"
-RDEPEND="media-libs/elementary"
+RDEPEND="media-libs/evas"
 DEPEND="${RDEPEND}
-        virtual/pkgconfig
-        dev-python/python-evas"
+        >=dev-util/pkgconfig-0.9.0"
 src_prepare() {
         enlightenment_src_prepare
         python_copy_sources
