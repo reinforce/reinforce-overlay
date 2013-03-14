@@ -13,16 +13,9 @@ KEYWORDS="~arm"
 IUSE="gles1 gles2"
 SLOT="0"
 
-RDEPEND="x11-base/xorg-server"
-DEPEND="${RDEPEND}
-	gles1? ( x11-drivers/mali-drivers )
-	gles2? ( x11-drivers/mali-drivers )
-	x11-proto/fontsproto
-	x11-proto/randrproto
-	x11-proto/renderproto
-	x11-proto/videoproto
-	x11-proto/xproto
-"
+RDEPEND="x11-base/xorg-server
+	x11-libs/libdri2"
+DEPEND="${RDEPEND}"
 
 src_unpack() {
 	git-2_src_unpack
