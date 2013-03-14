@@ -10,7 +10,7 @@ EGIT_REPO_URI="git://github.com/linux-sunxi/sunxi-mali.git"
 EGIT_HAS_SUBMODULES=1
 
 KEYWORDS="~arm"
-IUSE="gles1 gles2"
+IUSE=""
 SLOT="0"
 
 RDEPEND="x11-base/xorg-server
