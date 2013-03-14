@@ -30,5 +30,7 @@ src_compile() {
 }
 
 src_install() {
+	mkdir ${D}/usr/lib -p
+	mkdir #{D}/usr/include/ump -p
 	emake DESTDIR="${D}" install
 }
