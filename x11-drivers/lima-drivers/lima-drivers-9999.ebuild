@@ -14,7 +14,8 @@ SLOT="0"
 IUSE=""
 
 DEPEND=">=app-admin/eselect-opengl-1.2.6"
-RDEPEND="${DEPEND} media-libs/mesa[gles1,gles2]"
+RDEPEND="${DEPEND} media-libs/mesa[gles1,gles2]
+	x11-drivers/mali-drivers"
 
 src_configure() {
 	sed -i 's/arm-linux-gnueabihf/armv7a-hardfloat-linux-gnueabi/' Makefile.inc

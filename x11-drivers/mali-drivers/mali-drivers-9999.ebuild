@@ -30,12 +30,41 @@ src_compile() {
 }
 
 src_install() {
+	local opengl_imp="mali"
+	local opengl_dir="/usr/$(get_libdir)/opengl/${opengl_imp}"
+
+	into "${opengl_dir}"
+	dolib.so libEGL.so.1
+	dolib.so libGLESv1_CM.so.1
+	dolib.so libGLESv2.so.2
+
+	into "/usr/$(get_libdir)"
+	dolib.so libMali.so
+	dolib.so libUMP.so.3
+	dolib.so libUMP.so
+
+	# make the symlinks for EGL/GLES stuff
+	dosym "${opengl_dir}/lib/libEGL.so.1" "${opengl_dir}/lib/libEGL.so"
+	dosym "${opengl_dir}/lib/libGLESv1_CM.so.1" "${opengl_dir}/lib/libGLESv1_CM.so"
+	dosym "${opengl_dir}/lib/libGLESv2.so.2" "${opengl_dir}/lib/libGLESv2.so"
+
+	# fallback to mesa for libGL.so
+	dosym "/usr/$(get_libdir)/opengl/xorg-x11/lib/libGL.so" "${opengl_dir}/lib/libGL.so"
+	dosym "/usr/$(get_libdir)/opengl/xorg-x11/lib/libGL.so.1" "${opengl_dir}/lib/libGL.so.1"
+
 	# udev rules to get the right ownership/permission for /dev/ump and /dev/mali
 	insinto /lib/udev/rules.d
 	doins "${FILESDIR}"/99-mali-drivers.rules
+}
 
-	mkdir ${D}/usr/lib -p
-	mkdir #{D}/usr/include/ump -p
+pkg_postinst() {
+	"${ROOT}"/usr/bin/eselect opengl set --use-old mali
 
-	emake DESTDIR="${D}" install
+	elog "You must be in the video group to use the Mali 3D acceleration."
+	elog
+	elog "To use the Mali OpenGL ES libraries, run \"eselect opengl set mali\""
+}
+
+pkg_postrm() {
+	"${ROOT}"/usr/bin/eselect opengl set --use-old xorg-x11
 }
