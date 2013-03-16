@@ -13,7 +13,7 @@
 +++ bbb/Makefile.setup	2013-03-14 22:14:55.849338364 +0400
 @@ -1,4 +1,4 @@
 -prefix ?= /usr/
-+prefix ?= $(DESTDIR)/usr/
++prefix ?= $(DESTDIR)/
  libdir ?= $(prefix)lib/
  includedir ?= $(prefix)/include
 

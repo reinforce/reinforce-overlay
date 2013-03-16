@@ -3,7 +3,7 @@
 # $Header: $
 
 EAPI=4
-inherit eutils git-2
+inherit eutils git-2 udev
 
 DESCRIPTION="Sunxi Mali-400 support libraries"
 EGIT_REPO_URI="git://github.com/linux-sunxi/sunxi-mali.git"
@@ -33,28 +33,22 @@ src_install() {
 	local opengl_imp="mali"
 	local opengl_dir="/usr/$(get_libdir)/opengl/${opengl_imp}"
 
-	into "${opengl_dir}"
-	dolib.so libEGL.so.1
-	dolib.so libGLESv1_CM.so.1
-	dolib.so libGLESv2.so.2
+	mkdir ${D}/${opengl_dir}/lib -p
+	mkdir ${D}/${opengl_dir}/include/ump -p
 
-	into "/usr/$(get_libdir)"
-	dolib.so libMali.so
-	dolib.so libUMP.so.3
-	dolib.so libUMP.so
+	# install to opengl dir
+	emake DESTDIR="${D}/${opengl_dir}" install
 
-	# make the symlinks for EGL/GLES stuff
-	dosym "${opengl_dir}/lib/libEGL.so.1" "${opengl_dir}/lib/libEGL.so"
-	dosym "${opengl_dir}/lib/libGLESv1_CM.so.1" "${opengl_dir}/lib/libGLESv1_CM.so"
-	dosym "${opengl_dir}/lib/libGLESv2.so.2" "${opengl_dir}/lib/libGLESv2.so"
+	# make the symlinks for Mali and UMP stuff
+	dosym "opengl/${opengl_imp}/lib/libMali.so" "/usr/$(get_libdir)/libMali.so"
+	dosym "opengl/${opengl_imp}/lib/libUMP.so" "/usr/$(get_libdir)/libUMP.so"
 
 	# fallback to mesa for libGL.so
-	dosym "/usr/$(get_libdir)/opengl/xorg-x11/lib/libGL.so" "${opengl_dir}/lib/libGL.so"
-	dosym "/usr/$(get_libdir)/opengl/xorg-x11/lib/libGL.so.1" "${opengl_dir}/lib/libGL.so.1"
+	dosym "../../xorg-x11/lib/libGL.so" "${opengl_dir}/lib/libGL.so"
+	dosym "../..//xorg-x11/lib/libGL.so.1" "${opengl_dir}/lib/libGL.so.1"
 
 	# udev rules to get the right ownership/permission for /dev/ump and /dev/mali
-	insinto /lib/udev/rules.d
-	doins "${FILESDIR}"/99-mali-drivers.rules
+	udev_newrules "${FILESDIR}"/99-mali-drivers.rules 99-mali-drivers.rules
 }
 
 pkg_postinst() {
