@@ -22,7 +22,7 @@ src_unpack() {
 }
 
 src_prepare() {
-	epatch "${FILESDIR}"/makefile.patch
+	epatch "${FILESDIR}"/Gentoo-armhf-ABI.patch
 	sed -i 's/prefix ?= \/usr\//prefix ?= \//' Makefile.setup
 }
 
