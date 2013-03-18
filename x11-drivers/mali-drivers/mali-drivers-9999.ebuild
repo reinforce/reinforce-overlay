@@ -23,6 +23,7 @@ src_unpack() {
 
 src_prepare() {
 	epatch "${FILESDIR}"/makefile.patch
+	sed -i 's/prefix ?= \/usr\//prefix ?= \//' Makefile.setup
 }
 
 src_compile() {
@@ -37,7 +38,7 @@ src_install() {
 	mkdir ${D}/${opengl_dir}/include/ump -p
 
 	# install to opengl dir
-	emake DESTDIR="${D}/${opengl_dir}" install
+	emake DESTDIR="${D}/${opengl_dir}" prefix=/ install
 
 	# make the symlinks for Mali and UMP stuff
 	dosym "opengl/${opengl_imp}/lib/libMali.so" "/usr/$(get_libdir)/libMali.so"

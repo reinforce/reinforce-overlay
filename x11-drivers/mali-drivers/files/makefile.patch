@@ -9,11 +9,4 @@
    endif
    $(info ABI="$(ABI)" (Detected))
  else
---- aaa/Makefile.setup	2013-03-14 22:15:17.999326771 +0400
-+++ bbb/Makefile.setup	2013-03-14 22:14:55.849338364 +0400
-@@ -1,4 +1,4 @@
--prefix ?= /usr/
-+prefix ?= $(DESTDIR)/
- libdir ?= $(prefix)lib/
- includedir ?= $(prefix)/include
 
