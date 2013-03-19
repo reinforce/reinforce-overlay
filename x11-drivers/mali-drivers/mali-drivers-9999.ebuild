@@ -10,7 +10,11 @@ EGIT_REPO_URI="git://github.com/linux-sunxi/sunxi-mali.git"
 EGIT_HAS_SUBMODULES=1
 
 KEYWORDS="~arm"
-IUSE=""
+IUSE="X directfb"
+REQUIRED_USE="
+	X? ( !directfb )
+	directfb? ( !X )"
+
 SLOT="0"
 
 RDEPEND="x11-base/xorg-server
@@ -27,7 +31,9 @@ src_prepare() {
 }
 
 src_compile() {
-	emake || die
+	use X && EGL_TYPE="x11"
+	use directfb && EGL_TYPE="framebuffer"
+	emake EGL_TYPE=${EGL_TYPE} || die
 }
 
 src_install() {
@@ -46,7 +52,7 @@ src_install() {
 
 	# fallback to mesa for libGL.so
 	dosym "../../xorg-x11/lib/libGL.so" "${opengl_dir}/lib/libGL.so"
-	dosym "../..//xorg-x11/lib/libGL.so.1" "${opengl_dir}/lib/libGL.so.1"
+	dosym "../../xorg-x11/lib/libGL.so.1" "${opengl_dir}/lib/libGL.so.1"
 
 	# udev rules to get the right ownership/permission for /dev/ump and /dev/mali
 	udev_newrules "${FILESDIR}"/99-mali-drivers.rules 99-mali-drivers.rules
