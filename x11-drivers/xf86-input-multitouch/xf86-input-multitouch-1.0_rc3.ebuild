@@ -24,7 +24,6 @@ DEPEND="${RDEPEND}
 
 src_install() {
 	emake DESTDIR="${D}" install || die "emake install failed"
-
 }
 
 pkg_postinst() {

@@ -10,11 +10,7 @@ EGIT_REPO_URI="git://github.com/linux-sunxi/sunxi-mali.git"
 EGIT_HAS_SUBMODULES=1
 
 KEYWORDS="~arm"
-IUSE="X directfb"
-REQUIRED_USE="
-	X? ( !directfb )
-	directfb? ( !X )"
-
+IUSE="X"
 SLOT="0"
 
 RDEPEND="x11-base/xorg-server
@@ -31,8 +27,11 @@ src_prepare() {
 }
 
 src_compile() {
-	use X && EGL_TYPE="x11"
-	use directfb && EGL_TYPE="framebuffer"
+	if use X; then
+		EGL_TYPE="x11"
+	else
+		EGL_TYPE="framebuffer"
+	fi
 	emake EGL_TYPE=${EGL_TYPE} || die
 }
 
@@ -46,7 +45,7 @@ src_install() {
 	# install to opengl dir
 	emake DESTDIR="${D}/${opengl_dir}" prefix=/ install
 
-	# make the symlinks for Mali and UMP stuff
+	# make the symlinks for libMali.so and libUMP.so
 	dosym "opengl/${opengl_imp}/lib/libMali.so" "/usr/$(get_libdir)/libMali.so"
 	dosym "opengl/${opengl_imp}/lib/libUMP.so" "/usr/$(get_libdir)/libUMP.so"
 
