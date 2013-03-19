@@ -23,7 +23,6 @@ src_unpack() {
 
 src_prepare() {
 	epatch "${FILESDIR}"/Gentoo-armhf-ABI.patch
-	sed -i 's/prefix ?= \/usr\//prefix ?= \//' Makefile.setup
 }
 
 src_compile() {
@@ -37,13 +36,19 @@ src_compile() {
 
 src_install() {
 	local opengl_imp="mali"
-	local opengl_dir="/usr/$(get_libdir)/opengl/${opengl_imp}"
+	local opengl_dir="usr/$(get_libdir)/opengl/${opengl_imp}"
 
+	mkdir ${D}/usr/${get_libdir} -p
+	mkdir ${D}/usr/include/ump -p
 	mkdir ${D}/${opengl_dir}/lib -p
-	mkdir ${D}/${opengl_dir}/include/ump -p
+	mkdir ${D}/${opengl_dir}/include -p
 
 	# install to opengl dir
-	emake DESTDIR="${D}/${opengl_dir}" prefix=/ install
+	emake DESTDIR="${D}" install
+
+	# move libs and headers to opengl_dir
+	mv ${D}/usr/$(get_libdir)/lib*.so* ${D}/${opengl_dir}/lib
+	mv ${D}/usr/include/{EGL,KHR,GLES,GLES2} ${D}/${opengl_dir}/include
 
 	# make the symlinks for libMali.so and libUMP.so
 	dosym "opengl/${opengl_imp}/lib/libMali.so" "/usr/$(get_libdir)/libMali.so"
@@ -60,9 +65,11 @@ src_install() {
 pkg_postinst() {
 	"${ROOT}"/usr/bin/eselect opengl set --use-old mali
 
+	elog
 	elog "You must be in the video group to use the Mali 3D acceleration."
 	elog
 	elog "To use the Mali OpenGL ES libraries, run \"eselect opengl set mali\""
+	elog
 }
 
 pkg_postrm() {
