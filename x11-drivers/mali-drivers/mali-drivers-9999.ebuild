@@ -3,7 +3,7 @@
 # $Header: $
 
 EAPI=4
-inherit eutils git-2 udev
+inherit base eutils git-2 udev
 
 DESCRIPTION="Sunxi Mali-400 support libraries"
 EGIT_REPO_URI="git://github.com/linux-sunxi/sunxi-mali.git"
@@ -16,6 +16,9 @@ SLOT="0"
 RDEPEND="x11-base/xorg-server
 	x11-libs/libdri2"
 DEPEND="${RDEPEND}"
+
+OPENGL_IMP="mali"
+OPENGL_DIR="/usr/$(get_libdir)/opengl/${OPENGL_IMP}/"
 
 src_unpack() {
 	git-2_src_unpack
@@ -35,43 +38,45 @@ src_compile() {
 }
 
 src_install() {
-	local opengl_imp="mali"
-	local opengl_dir="usr/$(get_libdir)/opengl/${opengl_imp}"
+	# Create dirs
+	dodir usr/$(get_libdir)
+	dodir usr/include/ump
 
-	mkdir ${D}/usr/${get_libdir} -p
-	mkdir ${D}/usr/include/ump -p
-	mkdir ${D}/${opengl_dir}/lib -p
-	mkdir ${D}/${opengl_dir}/include -p
+	# Install
+	base_src_install
 
-	# install to opengl dir
-	emake DESTDIR="${D}" install
+	# Move libMali and others from /usr/lib to /usr/lib/opengl/blah/lib
+	# because user can eselect desired GL provider.
+	ebegin "Moving libMali and friends for dynamic switching"
+		local x
+		dodir ${OPENGL_DIR}/{lib,extensions,include}
+		for x in "${ED}"/usr/$(get_libdir)/lib{EGL,GL*,Mali,UMP}.{la,a,so*}; do
+			if [ -f ${x} -o -L ${x} ]; then
+				mv -f "${x}" "${ED}${OPENGL_DIR}"/lib \
+					|| die "Failed to move ${x}"
+			fi
+		done
+		for x in "${ED}"/usr/include/{EGL,GLES*,KHR}; do
+			if [ -d ${x} ]; then
+				mv -f "${x}" "${ED}${OPENGL_DIR}"/include \
+					|| die "Failed to move ${x}"
+			fi
+		done
+	eend $?
 
-	# move libs and headers to opengl_dir
-	mv ${D}/usr/$(get_libdir)/lib*.so* ${D}/${opengl_dir}/lib
-	mv ${D}/usr/include/{EGL,KHR,GLES,GLES2} ${D}/${opengl_dir}/include
+	# Make the symlinks for libMali.so and libUMP.so
+	dosym "opengl/${OPENGL_IMP}/lib/libMali.so" "/usr/$(get_libdir)/libMali.so"
+	dosym "opengl/${OPENGL_IMP}/lib/libUMP.so" "/usr/$(get_libdir)/libUMP.so"
 
-	# make the symlinks for libMali.so and libUMP.so
-	dosym "opengl/${opengl_imp}/lib/libMali.so" "/usr/$(get_libdir)/libMali.so"
-	dosym "opengl/${opengl_imp}/lib/libUMP.so" "/usr/$(get_libdir)/libUMP.so"
+	# Fallback to mesa for libGL.so
+	dosym "../../xorg-x11/lib/libGL.so" "${OPENGL_DIR}/lib/libGL.so"
+	dosym "../../xorg-x11/lib/libGL.so.1" "${OPENGL_DIR}/lib/libGL.so.1"
 
-	# fallback to mesa for libGL.so
-	dosym "../../xorg-x11/lib/libGL.so" "${opengl_dir}/lib/libGL.so"
-	dosym "../../xorg-x11/lib/libGL.so.1" "${opengl_dir}/lib/libGL.so.1"
-
-	# udev rules to get the right ownership/permission for /dev/ump and /dev/mali
+	# Udev rules to get the right ownership/permission for /dev/ump and /dev/mali
 	udev_newrules "${FILESDIR}"/99-mali-drivers.rules 99-mali-drivers.rules
 }
 
 pkg_postinst() {
-	"${ROOT}"/usr/bin/eselect opengl set --use-old mali
-
-	elog
 	elog "You must be in the video group to use the Mali 3D acceleration."
-	elog
-	elog "To use the Mali OpenGL ES libraries, run \"eselect opengl set mali\""
-	elog
-}
-
-pkg_postrm() {
-	"${ROOT}"/usr/bin/eselect opengl set --use-old xorg-x11
+	elog "To use the Mali OpenGL ES libraries, run \"eselect opengl set ${OPENGL_IMP}\""
 }
