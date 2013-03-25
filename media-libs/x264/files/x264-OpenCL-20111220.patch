@@ -1,99 +1,6 @@
-diff -urpN x264-snapshot-20111220-2245/Makefile x264-snapshot-20111220-2245-opencl/Makefile
---- x264-snapshot-20111220-2245/Makefile	2011-12-21 01:45:03.000000000 +0400
-+++ x264-snapshot-20111220-2245-opencl/Makefile	2013-03-25 10:08:33.984843044 +0400
-@@ -2,6 +2,8 @@
- 
- include config.mak
- 
-+GENERATED =
-+
- all: default
- 
- SRCS = common/mc.c common/predict.c common/pixel.c common/macroblock.c \
-@@ -132,6 +134,36 @@ SRCSO += x264dll.c
- endif
- endif
- 
-+QUOTED_CFLAGS := $(CFLAGS)
-+
-+ifeq ($(HAVE_OPENCL),yes)
-+empty:=
-+space:=$(empty) $(empty)
-+escaped:=\ $(empty)
-+open:=(
-+escopen:=\(
-+close:=)
-+escclose:=\)
-+SAFE_INC_DIR := $(subst $(space),$(escaped),$(OPENCL_INC_DIR))
-+SAFE_INC_DIR := $(subst $(open),$(escopen),$(SAFE_INC_DIR))
-+SAFE_INC_DIR := $(subst $(close),$(escclose),$(SAFE_INC_DIR))
-+SAFE_LIB_DIR := $(subst $(space),$(escaped),$(OPENCL_LIB_DIR))
-+SAFE_LIB_DIR := $(subst $(open),$(escopen),$(SAFE_LIB_DIR))
-+SAFE_LIB_DIR := $(subst $(close),$(escclose),$(SAFE_LIB_DIR))
-+# For normal CFLAGS and LDFLAGS, we must escape spaces with a backslash to
-+# make gcc happy
-+CFLAGS += -I$(SAFE_INC_DIR)
-+LDFLAGS += -l$(OPENCL_LIB) -L$(SAFE_LIB_DIR)
-+# For the CFLAGS used by the .depend rule, we must add quotes because
-+# the rule does an extra level of shell expansions
-+QUOTED_CFLAGS += -I"$(OPENCL_INC_DIR)"
-+encoder/oclobj.h: common/opencl/x264-cl.h $(wildcard common/opencl/*.cl)
-+	echo "static const char x264_opencl_source [] = {" > $@
-+	cat $^ | xxd -i >> $@
-+	echo ",0x00 };" >> $@
-+GENERATED += encoder/oclobj.h
-+endif
-+
- OBJS = $(SRCS:%.c=%.o)
- OBJCLI = $(SRCCLI:%.c=%.o)
- OBJSO = $(SRCSO:%.c=%.o)
-@@ -154,17 +186,22 @@ $(SONAME): .depend $(OBJS) $(OBJASM) $(O
- 	$(LD)$@ $(OBJS) $(OBJASM) $(OBJSO) $(SOFLAGS) $(LDFLAGS)
- 
- ifneq ($(EXE),)
--.PHONY: x264 checkasm
-+.PHONY: x264 checkasm test-opencl
- x264: x264$(EXE)
- checkasm: checkasm$(EXE)
-+test-opencl: test-opencl$(EXE)
- endif
- 
--x264$(EXE): .depend $(OBJCLI) $(CLI_LIBX264)
-+x264$(EXE): $(GENERATED) .depend $(OBJCLI) $(CLI_LIBX264)
- 	$(LD)$@ $(OBJCLI) $(CLI_LIBX264) $(LDFLAGSCLI) $(LDFLAGS)
- 
--checkasm$(EXE): .depend $(OBJCHK) $(LIBX264)
-+checkasm$(EXE): $(GENERATED) .depend $(OBJCHK) $(LIBX264)
- 	$(LD)$@ $(OBJCHK) $(LIBX264) $(LDFLAGS)
- 
-+OBJOCL = tools/test-opencl.o
-+test-opencl$(EXE): .depend ${OBJOCL} $(LIBX264)
-+	$(LD)$@ $(OBJOCL) $(LIBX264) $(LDFLAGS)
-+
- $(OBJS) $(OBJASM) $(OBJSO) $(OBJCLI) $(OBJCHK): .depend
- 
- %.o: %.asm
-@@ -177,7 +214,7 @@ $(OBJS) $(OBJASM) $(OBJSO) $(OBJCLI) $(O
- 
- .depend: config.mak
- 	@rm -f .depend
--	@$(foreach SRC, $(SRCS) $(SRCCLI) $(SRCSO), $(CC) $(CFLAGS) $(SRC) $(DEPMT) $(SRC:%.c=%.o) $(DEPMM) 1>> .depend;)
-+	@$(foreach SRC, $(SRCS) $(SRCCLI) $(SRCSO), $(CC) $(QUOTED_CFLAGS) $(SRC) $(DEPMT) $(SRC:%.c=%.o) $(DEPMM) 1>> .depend;)
- 
- config.mak:
- 	./configure
-@@ -215,7 +252,7 @@ endif
- 
- clean:
- 	rm -f $(OBJS) $(OBJASM) $(OBJCLI) $(OBJSO) $(SONAME) *.a *.lib *.exp *.pdb x264 x264.exe .depend TAGS
--	rm -f checkasm checkasm.exe $(OBJCHK)
-+	rm -f checkasm checkasm.exe $(OBJCHK) $(GENERATED) x264_lookahead.clbin
- 	rm -f $(SRC2:%.c=%.gcda) $(SRC2:%.c=%.gcno) *.dyn pgopti.dpi pgopti.dpi.lock
- 
- distclean: clean
 diff -urpN x264-snapshot-20111220-2245/common/common.c x264-snapshot-20111220-2245-opencl/common/common.c
 --- x264-snapshot-20111220-2245/common/common.c	2011-12-21 01:45:03.000000000 +0400
-+++ x264-snapshot-20111220-2245-opencl/common/common.c	2013-03-25 10:11:44.900838760 +0400
++++ x264-snapshot-20111220-2245-opencl/common/common.c	2013-03-25 20:33:40.983619425 +0400
 @@ -170,6 +170,10 @@ void x264_param_default( x264_param_t *p
      param->b_pic_struct = 0;
      param->b_fake_interlaced = 0;
@@ -118,7 +25,7 @@ diff -urpN x264-snapshot-20111220-2245/common/common.c x264-snapshot-20111220-22
  #undef OPT
 diff -urpN x264-snapshot-20111220-2245/common/common.h x264-snapshot-20111220-2245-opencl/common/common.h
 --- x264-snapshot-20111220-2245/common/common.h	2011-12-21 01:45:03.000000000 +0400
-+++ x264-snapshot-20111220-2245-opencl/common/common.h	2013-03-25 10:13:27.633836455 +0400
++++ x264-snapshot-20111220-2245-opencl/common/common.h	2013-03-25 20:33:41.003619424 +0400
 @@ -92,6 +92,11 @@ do {\
  #include <assert.h>
  #include <limits.h>
@@ -199,7 +106,7 @@ diff -urpN x264-snapshot-20111220-2245/common/common.h x264-snapshot-20111220-22
  // included at the end because it needs x264_t
 diff -urpN x264-snapshot-20111220-2245/common/frame.c x264-snapshot-20111220-2245-opencl/common/frame.c
 --- x264-snapshot-20111220-2245/common/frame.c	2011-12-21 01:45:03.000000000 +0400
-+++ x264-snapshot-20111220-2245-opencl/common/frame.c	2013-03-25 10:16:54.245831819 +0400
++++ x264-snapshot-20111220-2245-opencl/common/frame.c	2013-03-25 20:33:41.003619424 +0400
 @@ -256,6 +256,23 @@ fail:
      return NULL;
  }
@@ -236,7 +143,7 @@ diff -urpN x264-snapshot-20111220-2245/common/frame.c x264-snapshot-20111220-224
  }
 diff -urpN x264-snapshot-20111220-2245/common/frame.h x264-snapshot-20111220-2245-opencl/common/frame.h
 --- x264-snapshot-20111220-2245/common/frame.h	2011-12-21 01:45:03.000000000 +0400
-+++ x264-snapshot-20111220-2245-opencl/common/frame.h	2013-03-25 10:17:39.333830807 +0400
++++ x264-snapshot-20111220-2245-opencl/common/frame.h	2013-03-25 20:33:41.003619424 +0400
 @@ -165,6 +165,20 @@ typedef struct x264_frame
  
      /* user data */
@@ -260,7 +167,7 @@ diff -urpN x264-snapshot-20111220-2245/common/frame.h x264-snapshot-20111220-224
  /* synchronized frame list */
 diff -urpN x264-snapshot-20111220-2245/common/opencl/bidir.cl x264-snapshot-20111220-2245-opencl/common/opencl/bidir.cl
 --- x264-snapshot-20111220-2245/common/opencl/bidir.cl	1970-01-01 03:00:00.000000000 +0300
-+++ x264-snapshot-20111220-2245-opencl/common/opencl/bidir.cl	2013-03-25 10:19:14.372828675 +0400
++++ x264-snapshot-20111220-2245-opencl/common/opencl/bidir.cl	2013-03-25 20:33:41.004619424 +0400
 @@ -0,0 +1,254 @@
 +
 +/* Four threads cooperatively measure 8x8 BIDIR cost with SATD */
@@ -518,7 +425,7 @@ diff -urpN x264-snapshot-20111220-2245/common/opencl/bidir.cl x264-snapshot-2011
 +}
 diff -urpN x264-snapshot-20111220-2245/common/opencl/downscale.cl x264-snapshot-20111220-2245-opencl/common/opencl/downscale.cl
 --- x264-snapshot-20111220-2245/common/opencl/downscale.cl	1970-01-01 03:00:00.000000000 +0300
-+++ x264-snapshot-20111220-2245-opencl/common/opencl/downscale.cl	2013-03-25 10:20:06.373827508 +0400
++++ x264-snapshot-20111220-2245-opencl/common/opencl/downscale.cl	2013-03-25 20:33:41.004619424 +0400
 @@ -0,0 +1,138 @@
 +/*
 + * downscale lowres luma: full-res buffer to down scale image, and to packed hpel image
@@ -660,7 +567,7 @@ diff -urpN x264-snapshot-20111220-2245/common/opencl/downscale.cl x264-snapshot-
 +}
 diff -urpN x264-snapshot-20111220-2245/common/opencl/intra.cl x264-snapshot-20111220-2245-opencl/common/opencl/intra.cl
 --- x264-snapshot-20111220-2245/common/opencl/intra.cl	1970-01-01 03:00:00.000000000 +0300
-+++ x264-snapshot-20111220-2245-opencl/common/opencl/intra.cl	2013-03-25 10:21:05.257826187 +0400
++++ x264-snapshot-20111220-2245-opencl/common/opencl/intra.cl	2013-03-25 20:33:41.005619424 +0400
 @@ -0,0 +1,1053 @@
 +
 +inline uint32_t pack16to32( uint32_t a, uint32_t b )
@@ -1717,7 +1624,7 @@ diff -urpN x264-snapshot-20111220-2245/common/opencl/intra.cl x264-snapshot-2011
 +}
 diff -urpN x264-snapshot-20111220-2245/common/opencl/motionsearch.cl x264-snapshot-20111220-2245-opencl/common/opencl/motionsearch.cl
 --- x264-snapshot-20111220-2245/common/opencl/motionsearch.cl	1970-01-01 03:00:00.000000000 +0300
-+++ x264-snapshot-20111220-2245-opencl/common/opencl/motionsearch.cl	2013-03-25 10:21:52.775825121 +0400
++++ x264-snapshot-20111220-2245-opencl/common/opencl/motionsearch.cl	2013-03-25 20:33:41.005619424 +0400
 @@ -0,0 +1,274 @@
 +
 +int find_downscale_mb_xy( int x, int y, int mb_width, int mb_height )
@@ -1995,7 +1902,7 @@ diff -urpN x264-snapshot-20111220-2245/common/opencl/motionsearch.cl x264-snapsh
 +}
 diff -urpN x264-snapshot-20111220-2245/common/opencl/subpel.cl x264-snapshot-20111220-2245-opencl/common/opencl/subpel.cl
 --- x264-snapshot-20111220-2245/common/opencl/subpel.cl	1970-01-01 03:00:00.000000000 +0300
-+++ x264-snapshot-20111220-2245-opencl/common/opencl/subpel.cl	2013-03-25 10:22:30.679824270 +0400
++++ x264-snapshot-20111220-2245-opencl/common/opencl/subpel.cl	2013-03-25 20:33:41.005619424 +0400
 @@ -0,0 +1,283 @@
 +
 +/* One thread performs 8x8 SAD */
@@ -2282,7 +2189,7 @@ diff -urpN x264-snapshot-20111220-2245/common/opencl/subpel.cl x264-snapshot-201
 +}
 diff -urpN x264-snapshot-20111220-2245/common/opencl/weightp.cl x264-snapshot-20111220-2245-opencl/common/opencl/weightp.cl
 --- x264-snapshot-20111220-2245/common/opencl/weightp.cl	1970-01-01 03:00:00.000000000 +0300
-+++ x264-snapshot-20111220-2245-opencl/common/opencl/weightp.cl	2013-03-25 10:22:56.425823692 +0400
++++ x264-snapshot-20111220-2245-opencl/common/opencl/weightp.cl	2013-03-25 20:33:41.005619424 +0400
 @@ -0,0 +1,45 @@
 +/*
 +Launch dimensions: width x height (in pixels)
@@ -2331,7 +2238,7 @@ diff -urpN x264-snapshot-20111220-2245/common/opencl/weightp.cl x264-snapshot-20
 +}
 diff -urpN x264-snapshot-20111220-2245/common/opencl/x264-cl.h x264-snapshot-20111220-2245-opencl/common/opencl/x264-cl.h
 --- x264-snapshot-20111220-2245/common/opencl/x264-cl.h	1970-01-01 03:00:00.000000000 +0300
-+++ x264-snapshot-20111220-2245-opencl/common/opencl/x264-cl.h	2013-03-25 10:23:26.405823020 +0400
++++ x264-snapshot-20111220-2245-opencl/common/opencl/x264-cl.h	2013-03-25 20:33:41.005619424 +0400
 @@ -0,0 +1,156 @@
 +#pragma OPENCL EXTENSION cl_khr_local_int32_extended_atomics : enable
 +
@@ -2491,7 +2398,7 @@ diff -urpN x264-snapshot-20111220-2245/common/opencl/x264-cl.h x264-snapshot-201
 +}
 diff -urpN x264-snapshot-20111220-2245/configure x264-snapshot-20111220-2245-opencl/configure
 --- x264-snapshot-20111220-2245/configure	2011-12-21 01:45:03.000000000 +0400
-+++ x264-snapshot-20111220-2245-opencl/configure	2013-03-25 10:27:53.860817019 +0400
++++ x264-snapshot-20111220-2245-opencl/configure	2013-03-25 20:33:41.006619424 +0400
 @@ -24,6 +24,7 @@ Configuration options:
    --system-libx264         use system libx264 instead of internal
    --enable-shared          build shared library
@@ -2566,7 +2473,7 @@ diff -urpN x264-snapshot-20111220-2245/configure x264-snapshot-20111220-2245-ope
  echo >> config.log
 diff -urpN x264-snapshot-20111220-2245/encoder/encoder.c x264-snapshot-20111220-2245-opencl/encoder/encoder.c
 --- x264-snapshot-20111220-2245/encoder/encoder.c	2011-12-21 01:45:03.000000000 +0400
-+++ x264-snapshot-20111220-2245-opencl/encoder/encoder.c	2013-03-25 10:29:40.092814635 +0400
++++ x264-snapshot-20111220-2245-opencl/encoder/encoder.c	2013-03-25 20:33:41.006619424 +0400
 @@ -37,6 +37,10 @@
  #include "common/visualize.h"
  #endif
@@ -2628,7 +2535,7 @@ diff -urpN x264-snapshot-20111220-2245/encoder/encoder.c x264-snapshot-20111220-
      if( h->param.i_threads > 1 )
 diff -urpN x264-snapshot-20111220-2245/encoder/opencl.c x264-snapshot-20111220-2245-opencl/encoder/opencl.c
 --- x264-snapshot-20111220-2245/encoder/opencl.c	1970-01-01 03:00:00.000000000 +0300
-+++ x264-snapshot-20111220-2245-opencl/encoder/opencl.c	2013-03-25 10:30:31.274813487 +0400
++++ x264-snapshot-20111220-2245-opencl/encoder/opencl.c	2013-03-25 20:33:41.007619424 +0400
 @@ -0,0 +1,424 @@
 +/*****************************************************************************
 + * opencl.c: OpenCL initialization and kernel compilation
@@ -3054,9 +2961,217 @@ diff -urpN x264-snapshot-20111220-2245/encoder/opencl.c x264-snapshot-20111220-2
 +        clReleaseContext( h->opencl.context );
 +}
 +#endif /* HAVE_OPENCL */
+diff -urpN x264-snapshot-20111220-2245/encoder/slicetype.c x264-snapshot-20111220-2245-opencl/encoder/slicetype.c
+--- x264-snapshot-20111220-2245/encoder/slicetype.c	2011-12-21 01:45:03.000000000 +0400
++++ x264-snapshot-20111220-2245-opencl/encoder/slicetype.c	2013-03-25 20:33:41.008619424 +0400
+@@ -36,6 +36,15 @@ static int x264_slicetype_frame_cost( x2
+                                       x264_frame_t **frames, int p0, int p1, int b,
+                                       int b_intra_penalty );
+ 
++static void x264_weights_analyse( x264_t *h, x264_frame_t *fenc, x264_frame_t *ref, int b_lookahead );
++
++#if HAVE_OPENCL
++#ifdef _WIN32
++#include "windows.h"
++#endif
++#include "slicetype-cl.c"
++#endif
++
+ static void x264_lowres_context_init( x264_t *h, x264_mb_analysis_t *a )
+ {
+     a->i_qp = X264_LOOKAHEAD_QP;
+@@ -752,38 +761,61 @@ static int x264_slicetype_frame_cost( x2
+         frames[b]->i_cost_est[b-p0][p1-b] = 0;
+         frames[b]->i_cost_est_aq[b-p0][p1-b] = 0;
+ 
+-        /* Lowres lookahead goes backwards because the MVs are used as predictors in the main encode.
+-         * This considerably improves MV prediction overall. */
+-
+-        /* The edge mbs seem to reduce the predictive quality of the
+-         * whole frame's score, but are needed for a spatial distribution. */
+-        if( h->param.rc.b_mb_tree || h->param.rc.i_vbv_buffer_size ||
+-            h->mb.i_mb_width <= 2 || h->mb.i_mb_height <= 2 )
+-        {
+-            for( h->mb.i_mb_y = h->mb.i_mb_height - 1; h->mb.i_mb_y >= 0; h->mb.i_mb_y-- )
+-            {
+-                row_satd[h->mb.i_mb_y] = 0;
+-                if( !frames[b]->b_intra_calculated )
+-                    row_satd_intra[h->mb.i_mb_y] = 0;
+-                for( h->mb.i_mb_x = h->mb.i_mb_width - 1; h->mb.i_mb_x >= 0; h->mb.i_mb_x-- )
+-                    x264_slicetype_mb_cost( h, a, frames, p0, p1, b, dist_scale_factor, do_search, w );
++#if HAVE_OPENCL
++        if( h->param.b_opencl )
++        {
++            x264_opencl_lowres_init(h, frames[b], a->i_lambda );
++            if( do_search[0] )
++            {
++                x264_opencl_lowres_init( h, frames[p0], a->i_lambda );
++                x264_opencl_motionsearch( h, frames, b, p0, 0, a->i_lambda, w );
++            }
++            if( do_search[1] )
++            {
++                x264_opencl_lowres_init( h, frames[p1], a->i_lambda );
++                x264_opencl_motionsearch( h, frames, b, p1, 1, a->i_lambda, w );
+             }
++            if( b != p0 )
++                x264_opencl_finalize_cost( h, a->i_lambda, frames, p0, p1, b, dist_scale_factor );
++            x264_opencl_flush( h );
++            i_score = frames[b]->i_cost_est[b-p0][p1-b];
+         }
+         else
++#endif
+         {
+-            for( h->mb.i_mb_y = h->mb.i_mb_height - 2; h->mb.i_mb_y >= 1; h->mb.i_mb_y-- )
+-                for( h->mb.i_mb_x = h->mb.i_mb_width - 2; h->mb.i_mb_x >= 1; h->mb.i_mb_x-- )
+-                    x264_slicetype_mb_cost( h, a, frames, p0, p1, b, dist_scale_factor, do_search, w );
+-        }
++            /* Lowres lookahead goes backwards because the MVs are used as predictors in
++             * the main encode. This considerably improves MV prediction overall. */
+ 
+-        i_score = frames[b]->i_cost_est[b-p0][p1-b];
+-        if( b != p1 )
+-            i_score = (uint64_t)i_score * 100 / (120 + h->param.i_bframe_bias);
+-        else
+-            frames[b]->b_intra_calculated = 1;
++            /* The edge mbs seem to reduce the predictive quality of the
++             * whole frame's score, but are needed for a spatial distribution. */
++            if( h->param.rc.b_mb_tree || h->param.rc.i_vbv_buffer_size ||
++                    h->mb.i_mb_width <= 2 || h->mb.i_mb_height <= 2 )
++            {
++                for( h->mb.i_mb_y = h->mb.i_mb_height - 1; h->mb.i_mb_y >= 0; h->mb.i_mb_y-- )
++                {
++                    row_satd[h->mb.i_mb_y] = 0;
++                    if( !frames[b]->b_intra_calculated )
++                        row_satd_intra[h->mb.i_mb_y] = 0;
++                    for( h->mb.i_mb_x = h->mb.i_mb_width - 1; h->mb.i_mb_x >= 0; h->mb.i_mb_x-- )
++                        x264_slicetype_mb_cost( h, a, frames, p0, p1, b, dist_scale_factor, do_search, w );
++                }
++            }
++            else
++            {
++                for( h->mb.i_mb_y = h->mb.i_mb_height - 2; h->mb.i_mb_y >= 1; h->mb.i_mb_y-- )
++                    for( h->mb.i_mb_x = h->mb.i_mb_width - 2; h->mb.i_mb_x >= 1; h->mb.i_mb_x-- )
++                        x264_slicetype_mb_cost( h, a, frames, p0, p1, b, dist_scale_factor, do_search, w );
++            }
+ 
+-        frames[b]->i_cost_est[b-p0][p1-b] = i_score;
+-        x264_emms();
++            i_score = frames[b]->i_cost_est[b-p0][p1-b];
++            if( b != p1 )
++                i_score = (uint64_t)i_score * 100 / (120 + h->param.i_bframe_bias);
++            else
++                frames[b]->b_intra_calculated = 1;
++
++            frames[b]->i_cost_est[b-p0][p1-b] = i_score;
++            x264_emms();
++        }
+     }
+ 
+     if( b_intra_penalty )
+@@ -1347,6 +1379,61 @@ void x264_slicetype_analyse( x264_t *h,
+         return;
+     }
+ 
++#if HAVE_OPENCL
++#ifdef _WIN32
++    int my_pri = THREAD_PRIORITY_NORMAL, ocl_pri = THREAD_PRIORITY_NORMAL;
++#endif
++
++    if( h->param.b_opencl )
++    {
++#ifdef _WIN32
++#define CL_QUEUE_THREAD_HANDLE_AMD 0x403E
++        HANDLE id = GetCurrentThread();
++        my_pri = GetThreadPriority( id );
++        SetThreadPriority( id, THREAD_PRIORITY_ABOVE_NORMAL );
++        cl_int status = clGetCommandQueueInfo( h->opencl.queue, CL_QUEUE_THREAD_HANDLE_AMD, sizeof(HANDLE), &id, NULL );
++        if( status == CL_SUCCESS )
++        {
++            ocl_pri = GetThreadPriority( id );
++            SetThreadPriority( id, THREAD_PRIORITY_ABOVE_NORMAL );
++        }
++#endif
++
++        int b_work_done = 0;
++
++        /* precalculate intra and I frames */
++        for( int i = 0; i <= num_frames; i++ )
++        {
++            b_work_done |= x264_opencl_lowres_init( h, frames[i], a.i_lambda );
++        }
++        if( b_work_done && h->param.analyse.i_weighted_pred )
++        {
++            /* weightp estimation requires intra costs to be on the CPU */
++            x264_opencl_flush( h );
++        }
++
++        if( h->param.i_bframe && h->param.i_bframe_adaptive == X264_B_ADAPT_TRELLIS )
++        {
++            /* Precalculate motion searches in both directions */
++            for( int i = 0; i < num_frames; i++ )
++            {
++                for (int b = 0; b < h->param.i_bframe; b++)
++                {
++                    if (i <= b)
++                    {
++                        break;
++                    }
++
++                    b_work_done |= x264_opencl_precalculate_frame_cost( h, &a, frames, i, i-b-1, i-b-1 );
++                    b_work_done |= x264_opencl_precalculate_frame_cost( h, &a, frames, i-b-1, i, i );
++                }
++            }
++        }
++        if( b_work_done )
++            x264_opencl_flush( h );
++    }
++#endif
++
+     if( h->param.i_bframe )
+     {
+         if( h->param.i_bframe_adaptive == X264_B_ADAPT_TRELLIS )
+@@ -1380,6 +1467,18 @@ void x264_slicetype_analyse( x264_t *h,
+                     continue;
+                 }
+ 
++#if HAVE_OPENCL
++                if( h->param.b_opencl )
++                {
++                    int b_work_done = 0;
++                    b_work_done |= x264_opencl_precalculate_frame_cost(h, &a, frames, i+0, i+2, i+1 );
++                    b_work_done |= x264_opencl_precalculate_frame_cost(h, &a, frames, i+0, i+1, i+1 );
++                    b_work_done |= x264_opencl_precalculate_frame_cost(h, &a, frames, i+1, i+2, i+2 );
++                    if( b_work_done )
++                        x264_opencl_flush( h );
++                }
++#endif
++
+                 cost1b1 = x264_slicetype_frame_cost( h, &a, frames, i+0, i+2, i+1, 0 );
+                 cost1p0 = x264_slicetype_frame_cost( h, &a, frames, i+0, i+1, i+1, 0 );
+                 cost2p0 = x264_slicetype_frame_cost( h, &a, frames, i+1, i+2, i+2, 0 );
+@@ -1462,6 +1561,19 @@ void x264_slicetype_analyse( x264_t *h,
+     /* Restore frametypes for all frames that haven't actually been decided yet. */
+     for( int j = reset_start; j <= num_frames; j++ )
+         frames[j]->i_type = X264_TYPE_AUTO;
++
++#ifdef _WIN32
++#if HAVE_OPENCL
++    if( h->param.b_opencl )
++    {
++        HANDLE id = GetCurrentThread();
++        SetThreadPriority( id, my_pri );
++        cl_int status = clGetCommandQueueInfo( h->opencl.queue, CL_QUEUE_THREAD_HANDLE_AMD, sizeof(HANDLE), &id, NULL );
++        if( status == CL_SUCCESS )
++            SetThreadPriority( id, ocl_pri );
++    }
++#endif
++#endif
+ }
+ 
+ void x264_slicetype_decide( x264_t *h )
 diff -urpN x264-snapshot-20111220-2245/encoder/slicetype-cl.c x264-snapshot-20111220-2245-opencl/encoder/slicetype-cl.c
 --- x264-snapshot-20111220-2245/encoder/slicetype-cl.c	1970-01-01 03:00:00.000000000 +0300
-+++ x264-snapshot-20111220-2245-opencl/encoder/slicetype-cl.c	2013-03-25 10:31:15.557812493 +0400
++++ x264-snapshot-20111220-2245-opencl/encoder/slicetype-cl.c	2013-03-25 20:33:41.007619424 +0400
 @@ -0,0 +1,655 @@
 +/*****************************************************************************
 + * slicetype-cl.c: OpenCL slicetype decision code (lowres lookahead)
@@ -3713,217 +3828,107 @@ diff -urpN x264-snapshot-20111220-2245/encoder/slicetype-cl.c x264-snapshot-2011
 +        return 1;
 +    }
 +}
-diff -urpN x264-snapshot-20111220-2245/encoder/slicetype.c x264-snapshot-20111220-2245-opencl/encoder/slicetype.c
---- x264-snapshot-20111220-2245/encoder/slicetype.c	2011-12-21 01:45:03.000000000 +0400
-+++ x264-snapshot-20111220-2245-opencl/encoder/slicetype.c	2013-03-25 10:37:01.066804741 +0400
-@@ -36,6 +36,15 @@ static int x264_slicetype_frame_cost( x2
-                                       x264_frame_t **frames, int p0, int p1, int b,
-                                       int b_intra_penalty );
+diff -urpN x264-snapshot-20111220-2245/Makefile x264-snapshot-20111220-2245-opencl/Makefile
+--- x264-snapshot-20111220-2245/Makefile	2011-12-21 01:45:03.000000000 +0400
++++ x264-snapshot-20111220-2245-opencl/Makefile	2013-03-25 20:34:10.365618766 +0400
+@@ -2,6 +2,8 @@
  
-+static void x264_weights_analyse( x264_t *h, x264_frame_t *fenc, x264_frame_t *ref, int b_lookahead );
-+
-+#if HAVE_OPENCL
-+#ifdef _WIN32
-+#include "windows.h"
-+#endif
-+#include "slicetype-cl.c"
-+#endif
-+
- static void x264_lowres_context_init( x264_t *h, x264_mb_analysis_t *a )
- {
-     a->i_qp = X264_LOOKAHEAD_QP;
-@@ -752,38 +761,61 @@ static int x264_slicetype_frame_cost( x2
-         frames[b]->i_cost_est[b-p0][p1-b] = 0;
-         frames[b]->i_cost_est_aq[b-p0][p1-b] = 0;
+ include config.mak
  
--        /* Lowres lookahead goes backwards because the MVs are used as predictors in the main encode.
--         * This considerably improves MV prediction overall. */
--
--        /* The edge mbs seem to reduce the predictive quality of the
--         * whole frame's score, but are needed for a spatial distribution. */
--        if( h->param.rc.b_mb_tree || h->param.rc.i_vbv_buffer_size ||
--            h->mb.i_mb_width <= 2 || h->mb.i_mb_height <= 2 )
--        {
--            for( h->mb.i_mb_y = h->mb.i_mb_height - 1; h->mb.i_mb_y >= 0; h->mb.i_mb_y-- )
--            {
--                row_satd[h->mb.i_mb_y] = 0;
--                if( !frames[b]->b_intra_calculated )
--                    row_satd_intra[h->mb.i_mb_y] = 0;
--                for( h->mb.i_mb_x = h->mb.i_mb_width - 1; h->mb.i_mb_x >= 0; h->mb.i_mb_x-- )
--                    x264_slicetype_mb_cost( h, a, frames, p0, p1, b, dist_scale_factor, do_search, w );
-+#if HAVE_OPENCL
-+        if( h->param.b_opencl )
-+        {
-+            x264_opencl_lowres_init(h, frames[b], a->i_lambda );
-+            if( do_search[0] )
-+            {
-+                x264_opencl_lowres_init( h, frames[p0], a->i_lambda );
-+                x264_opencl_motionsearch( h, frames, b, p0, 0, a->i_lambda, w );
-+            }
-+            if( do_search[1] )
-+            {
-+                x264_opencl_lowres_init( h, frames[p1], a->i_lambda );
-+                x264_opencl_motionsearch( h, frames, b, p1, 1, a->i_lambda, w );
-             }
-+            if( b != p0 )
-+                x264_opencl_finalize_cost( h, a->i_lambda, frames, p0, p1, b, dist_scale_factor );
-+            x264_opencl_flush( h );
-+            i_score = frames[b]->i_cost_est[b-p0][p1-b];
-         }
-         else
-+#endif
-         {
--            for( h->mb.i_mb_y = h->mb.i_mb_height - 2; h->mb.i_mb_y >= 1; h->mb.i_mb_y-- )
--                for( h->mb.i_mb_x = h->mb.i_mb_width - 2; h->mb.i_mb_x >= 1; h->mb.i_mb_x-- )
--                    x264_slicetype_mb_cost( h, a, frames, p0, p1, b, dist_scale_factor, do_search, w );
--        }
-+            /* Lowres lookahead goes backwards because the MVs are used as predictors in
-+             * the main encode. This considerably improves MV prediction overall. */
++GENERATED =
++
+ all: default
  
--        i_score = frames[b]->i_cost_est[b-p0][p1-b];
--        if( b != p1 )
--            i_score = (uint64_t)i_score * 100 / (120 + h->param.i_bframe_bias);
--        else
--            frames[b]->b_intra_calculated = 1;
-+            /* The edge mbs seem to reduce the predictive quality of the
-+             * whole frame's score, but are needed for a spatial distribution. */
-+            if( h->param.rc.b_mb_tree || h->param.rc.i_vbv_buffer_size ||
-+                    h->mb.i_mb_width <= 2 || h->mb.i_mb_height <= 2 )
-+            {
-+                for( h->mb.i_mb_y = h->mb.i_mb_height - 1; h->mb.i_mb_y >= 0; h->mb.i_mb_y-- )
-+                {
-+                    row_satd[h->mb.i_mb_y] = 0;
-+                    if( !frames[b]->b_intra_calculated )
-+                        row_satd_intra[h->mb.i_mb_y] = 0;
-+                    for( h->mb.i_mb_x = h->mb.i_mb_width - 1; h->mb.i_mb_x >= 0; h->mb.i_mb_x-- )
-+                        x264_slicetype_mb_cost( h, a, frames, p0, p1, b, dist_scale_factor, do_search, w );
-+                }
-+            }
-+            else
-+            {
-+                for( h->mb.i_mb_y = h->mb.i_mb_height - 2; h->mb.i_mb_y >= 1; h->mb.i_mb_y-- )
-+                    for( h->mb.i_mb_x = h->mb.i_mb_width - 2; h->mb.i_mb_x >= 1; h->mb.i_mb_x-- )
-+                        x264_slicetype_mb_cost( h, a, frames, p0, p1, b, dist_scale_factor, do_search, w );
-+            }
+ SRCS = common/mc.c common/predict.c common/pixel.c common/macroblock.c \
+@@ -132,6 +134,36 @@ SRCSO += x264dll.c
+ endif
+ endif
  
--        frames[b]->i_cost_est[b-p0][p1-b] = i_score;
--        x264_emms();
-+            i_score = frames[b]->i_cost_est[b-p0][p1-b];
-+            if( b != p1 )
-+                i_score = (uint64_t)i_score * 100 / (120 + h->param.i_bframe_bias);
-+            else
-+                frames[b]->b_intra_calculated = 1;
++QUOTED_CFLAGS := $(CFLAGS)
 +
-+            frames[b]->i_cost_est[b-p0][p1-b] = i_score;
-+            x264_emms();
-+        }
-     }
++ifeq ($(HAVE_OPENCL),yes)
++empty:=
++space:=$(empty) $(empty)
++escaped:=\ $(empty)
++open:=(
++escopen:=\(
++close:=)
++escclose:=\)
++SAFE_INC_DIR := $(subst $(space),$(escaped),$(OPENCL_INC_DIR))
++SAFE_INC_DIR := $(subst $(open),$(escopen),$(SAFE_INC_DIR))
++SAFE_INC_DIR := $(subst $(close),$(escclose),$(SAFE_INC_DIR))
++SAFE_LIB_DIR := $(subst $(space),$(escaped),$(OPENCL_LIB_DIR))
++SAFE_LIB_DIR := $(subst $(open),$(escopen),$(SAFE_LIB_DIR))
++SAFE_LIB_DIR := $(subst $(close),$(escclose),$(SAFE_LIB_DIR))
++# For normal CFLAGS and LDFLAGS, we must escape spaces with a backslash to
++# make gcc happy
++CFLAGS += -I$(SAFE_INC_DIR)
++LDFLAGS += -l$(OPENCL_LIB) -L$(SAFE_LIB_DIR)
++# For the CFLAGS used by the .depend rule, we must add quotes because
++# the rule does an extra level of shell expansions
++QUOTED_CFLAGS += -I"$(OPENCL_INC_DIR)"
++encoder/oclobj.h: common/opencl/x264-cl.h $(wildcard common/opencl/*.cl)
++	echo "static const char x264_opencl_source [] = {" > $@
++	cat $^ | xxd -i >> $@
++	echo ",0x00 };" >> $@
++GENERATED += encoder/oclobj.h
++endif
++
+ OBJS = $(SRCS:%.c=%.o)
+ OBJCLI = $(SRCCLI:%.c=%.o)
+ OBJSO = $(SRCSO:%.c=%.o)
+@@ -150,21 +182,26 @@ $(LIBX264): .depend $(OBJS) $(OBJASM)
+ 	$(AR)$@ $(OBJS) $(OBJASM)
+ 	$(if $(RANLIB), $(RANLIB) $@)
  
-     if( b_intra_penalty )
-@@ -1347,6 +1379,61 @@ void x264_slicetype_analyse( x264_t *h,
-         return;
-     }
+-$(SONAME): .depend $(OBJS) $(OBJASM) $(OBJSO)
++$(SONAME): $(GENERATED) .depend $(OBJS) $(OBJASM) $(OBJSO)
+ 	$(LD)$@ $(OBJS) $(OBJASM) $(OBJSO) $(SOFLAGS) $(LDFLAGS)
  
-+#if HAVE_OPENCL
-+#ifdef _WIN32
-+    int my_pri = THREAD_PRIORITY_NORMAL, ocl_pri = THREAD_PRIORITY_NORMAL;
-+#endif
-+
-+    if( h->param.b_opencl )
-+    {
-+#ifdef _WIN32
-+#define CL_QUEUE_THREAD_HANDLE_AMD 0x403E
-+        HANDLE id = GetCurrentThread();
-+        my_pri = GetThreadPriority( id );
-+        SetThreadPriority( id, THREAD_PRIORITY_ABOVE_NORMAL );
-+        cl_int status = clGetCommandQueueInfo( h->opencl.queue, CL_QUEUE_THREAD_HANDLE_AMD, sizeof(HANDLE), &id, NULL );
-+        if( status == CL_SUCCESS )
-+        {
-+            ocl_pri = GetThreadPriority( id );
-+            SetThreadPriority( id, THREAD_PRIORITY_ABOVE_NORMAL );
-+        }
-+#endif
-+
-+        int b_work_done = 0;
-+
-+        /* precalculate intra and I frames */
-+        for( int i = 0; i <= num_frames; i++ )
-+        {
-+            b_work_done |= x264_opencl_lowres_init( h, frames[i], a.i_lambda );
-+        }
-+        if( b_work_done && h->param.analyse.i_weighted_pred )
-+        {
-+            /* weightp estimation requires intra costs to be on the CPU */
-+            x264_opencl_flush( h );
-+        }
-+
-+        if( h->param.i_bframe && h->param.i_bframe_adaptive == X264_B_ADAPT_TRELLIS )
-+        {
-+            /* Precalculate motion searches in both directions */
-+            for( int i = 0; i < num_frames; i++ )
-+            {
-+                for (int b = 0; b < h->param.i_bframe; b++)
-+                {
-+                    if (i <= b)
-+                    {
-+                        break;
-+                    }
-+
-+                    b_work_done |= x264_opencl_precalculate_frame_cost( h, &a, frames, i, i-b-1, i-b-1 );
-+                    b_work_done |= x264_opencl_precalculate_frame_cost( h, &a, frames, i-b-1, i, i );
-+                }
-+            }
-+        }
-+        if( b_work_done )
-+            x264_opencl_flush( h );
-+    }
-+#endif
-+
-     if( h->param.i_bframe )
-     {
-         if( h->param.i_bframe_adaptive == X264_B_ADAPT_TRELLIS )
-@@ -1380,6 +1467,18 @@ void x264_slicetype_analyse( x264_t *h,
-                     continue;
-                 }
+ ifneq ($(EXE),)
+-.PHONY: x264 checkasm
++.PHONY: x264 checkasm test-opencl
+ x264: x264$(EXE)
+ checkasm: checkasm$(EXE)
++test-opencl: test-opencl$(EXE)
+ endif
  
-+#if HAVE_OPENCL
-+                if( h->param.b_opencl )
-+                {
-+                    int b_work_done = 0;
-+                    b_work_done |= x264_opencl_precalculate_frame_cost(h, &a, frames, i+0, i+2, i+1 );
-+                    b_work_done |= x264_opencl_precalculate_frame_cost(h, &a, frames, i+0, i+1, i+1 );
-+                    b_work_done |= x264_opencl_precalculate_frame_cost(h, &a, frames, i+1, i+2, i+2 );
-+                    if( b_work_done )
-+                        x264_opencl_flush( h );
-+                }
-+#endif
-+
-                 cost1b1 = x264_slicetype_frame_cost( h, &a, frames, i+0, i+2, i+1, 0 );
-                 cost1p0 = x264_slicetype_frame_cost( h, &a, frames, i+0, i+1, i+1, 0 );
-                 cost2p0 = x264_slicetype_frame_cost( h, &a, frames, i+1, i+2, i+2, 0 );
-@@ -1462,6 +1561,19 @@ void x264_slicetype_analyse( x264_t *h,
-     /* Restore frametypes for all frames that haven't actually been decided yet. */
-     for( int j = reset_start; j <= num_frames; j++ )
-         frames[j]->i_type = X264_TYPE_AUTO;
-+
-+#ifdef _WIN32
-+#if HAVE_OPENCL
-+    if( h->param.b_opencl )
-+    {
-+        HANDLE id = GetCurrentThread();
-+        SetThreadPriority( id, my_pri );
-+        cl_int status = clGetCommandQueueInfo( h->opencl.queue, CL_QUEUE_THREAD_HANDLE_AMD, sizeof(HANDLE), &id, NULL );
-+        if( status == CL_SUCCESS )
-+            SetThreadPriority( id, ocl_pri );
-+    }
-+#endif
-+#endif
- }
+-x264$(EXE): .depend $(OBJCLI) $(CLI_LIBX264)
++x264$(EXE): $(GENERATED) .depend $(OBJCLI) $(CLI_LIBX264)
+ 	$(LD)$@ $(OBJCLI) $(CLI_LIBX264) $(LDFLAGSCLI) $(LDFLAGS)
  
- void x264_slicetype_decide( x264_t *h )
+-checkasm$(EXE): .depend $(OBJCHK) $(LIBX264)
++checkasm$(EXE): $(GENERATED) .depend $(OBJCHK) $(LIBX264)
+ 	$(LD)$@ $(OBJCHK) $(LIBX264) $(LDFLAGS)
+ 
++OBJOCL = tools/test-opencl.o
++test-opencl$(EXE): .depend ${OBJOCL} $(LIBX264)
++	$(LD)$@ $(OBJOCL) $(LIBX264) $(LDFLAGS)
++
+ $(OBJS) $(OBJASM) $(OBJSO) $(OBJCLI) $(OBJCHK): .depend
+ 
+ %.o: %.asm
+@@ -177,7 +214,7 @@ $(OBJS) $(OBJASM) $(OBJSO) $(OBJCLI) $(O
+ 
+ .depend: config.mak
+ 	@rm -f .depend
+-	@$(foreach SRC, $(SRCS) $(SRCCLI) $(SRCSO), $(CC) $(CFLAGS) $(SRC) $(DEPMT) $(SRC:%.c=%.o) $(DEPMM) 1>> .depend;)
++	@$(foreach SRC, $(SRCS) $(SRCCLI) $(SRCSO), $(CC) $(QUOTED_CFLAGS) $(SRC) $(DEPMT) $(SRC:%.c=%.o) $(DEPMM) 1>> .depend;)
+ 
+ config.mak:
+ 	./configure
+@@ -215,7 +252,7 @@ endif
+ 
+ clean:
+ 	rm -f $(OBJS) $(OBJASM) $(OBJCLI) $(OBJSO) $(SONAME) *.a *.lib *.exp *.pdb x264 x264.exe .depend TAGS
+-	rm -f checkasm checkasm.exe $(OBJCHK)
++	rm -f checkasm checkasm.exe $(OBJCHK) $(GENERATED) x264_lookahead.clbin
+ 	rm -f $(SRC2:%.c=%.gcda) $(SRC2:%.c=%.gcno) *.dyn pgopti.dpi pgopti.dpi.lock
+ 
+ distclean: clean
 diff -urpN x264-snapshot-20111220-2245/x264.c x264-snapshot-20111220-2245-opencl/x264.c
 --- x264-snapshot-20111220-2245/x264.c	2011-12-21 01:45:03.000000000 +0400
-+++ x264-snapshot-20111220-2245-opencl/x264.c	2013-03-25 10:38:05.358803298 +0400
++++ x264-snapshot-20111220-2245-opencl/x264.c	2013-03-25 20:33:41.008619424 +0400
 @@ -802,6 +802,8 @@ static void help( x264_param_t *defaults
          "                                  as opposed to letting them select different algorithms\n" );
      H2( "      --asm <integer>         Override CPU detection\n" );
@@ -3944,7 +3949,7 @@ diff -urpN x264-snapshot-20111220-2245/x264.c x264-snapshot-20111220-2245-opencl
      { "frames",      required_argument, NULL, OPT_FRAMES },
 diff -urpN x264-snapshot-20111220-2245/x264.h x264-snapshot-20111220-2245-opencl/x264.h
 --- x264-snapshot-20111220-2245/x264.h	2011-12-21 01:45:03.000000000 +0400
-+++ x264-snapshot-20111220-2245-opencl/x264.h	2013-03-25 10:38:31.851802704 +0400
++++ x264-snapshot-20111220-2245-opencl/x264.h	2013-03-25 20:33:41.008619424 +0400
 @@ -443,6 +443,9 @@ typedef struct x264_param_t
  
      int b_fake_interlaced;
