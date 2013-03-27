@@ -37,7 +37,7 @@ RDEPEND=""
 DEPEND="amd64? ( >=dev-lang/yasm-1 )
 	x86? ( >=dev-lang/yasm-1 )
 	x86-fbsd? ( >=dev-lang/yasm-1 )
-	opencl? ( dev-util/nvidia-cuda-sdk )"
+	opencl? ( dev-util/nvidia-cuda-sdk dev-util/xxd )"
 
 if [ "${PV#9999}" = "${PV}" ]; then
 	S="${WORKDIR}/${MY_P}"

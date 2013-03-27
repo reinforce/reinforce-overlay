@@ -38,7 +38,7 @@ REQUIRED_USE="ffmpegsource? ( ffmpeg )"
 RDEPEND="ffmpeg? ( virtual/ffmpeg )
 	ffmpegsource? ( media-libs/ffmpegsource )
 	mp4? ( >=media-video/gpac-0.4.1_pre20060122 )
-	opencl? ( dev-util/nvidia-cuda-sdk )"
+	opencl? ( dev-util/nvidia-cuda-sdk dev-util/xxd )"
 
 DEPEND="${RDEPEND}
 	amd64? ( >=dev-lang/yasm-0.6.2 )
