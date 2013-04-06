@@ -4,7 +4,7 @@
 
 EAPI=5
 
-inherit qt4-r2
+inherit qt4-r2 gnome2-utils
 DESCRIPTION="A flexible and cross platform input method framework"
 HOMEPAGE="http://maliit.org"
 SRC_URI="http://maliit.org/releases/${PN}/${PF}.tar.bz2"
@@ -23,7 +23,8 @@ RESTRICT="test"
 DOCS=( README )
 
 src_prepare() {
-	use !examples && sed -i -e 's:SUBDIRS += examples::' maliit-framework.pro
+	use !examples && sed -i -e 's/ examples//' maliit-framework.pro
+	sed -i -e 's/    install_schemas \\//' src/src.pro
 	qt4-r2_src_prepare
 }
 
@@ -37,6 +38,19 @@ src_configure() {
 }
 
 src_install() {
-	addpredict /etc/gconf
 	emake DESTDIR="${D}" INSTALL_ROOT="${D}" install
+	dodir /etc/gconf/schemas
+	insinto /etc/gconf/schemas
+	doins "${S}/src/maliit-framework.schemas"
 }
+
+pkg_postinst() {
+	gnome2_gconf_savelist
+	gnome2_gconf_install
+}
+
+pkg_postrm() {
+	gnome2_gconf_savelist
+	gnome2_gconf_uninstall
+}
+
