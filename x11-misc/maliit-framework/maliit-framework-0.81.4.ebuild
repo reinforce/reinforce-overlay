@@ -44,13 +44,17 @@ src_install() {
 	doins "${S}/src/maliit-framework.schemas"
 }
 
-pkg_postinst() {
+pkg_preinst() {
 	gnome2_gconf_savelist
+}
+
+pkg_postinst() {
 	gnome2_gconf_install
+	gnome2_schemas_update
 }
 
 pkg_postrm() {
-	gnome2_gconf_savelist
 	gnome2_gconf_uninstall
+	gnome2_schemas_update
 }
 
