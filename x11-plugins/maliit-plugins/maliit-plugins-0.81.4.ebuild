@@ -11,7 +11,7 @@ SRC_URI="http://maliit.org/releases/${PN}/${PF}.tar.bz2"
 
 LICENSE="LGPL-2.1"
 SLOT="0"
-KEYWORDS="~amd64 ~x86"
+KEYWORDS="~amd64 ~arm ~x86"
 IUSE="doc gtk test"
 
 DEPEND="x11-misc/maliit-framework
