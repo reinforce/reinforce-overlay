@@ -15,6 +15,7 @@ KEYWORDS="~amd64 ~arm ~x86"
 IUSE="doc gtk test"
 
 DEPEND="x11-misc/maliit-framework
+	dev-qt/qttest
 	gtk? ( x11-misc/maliit-framework[gtk] )"
 
 RDEPEND="${DEPEND}"
