@@ -17,13 +17,13 @@ IUSE="+dbus doc examples gtk test"
 DEPEND="dbus? ( sys-apps/dbus )
 	gtk? ( x11-libs/gtk+ )
 	gnome-base/gconf
-	>=x11-libs/qtcore-4.7.4:4
-	>=x11-libs/qtgui-4.7.4:4
-	>=x11-libs/qtdbus-4.7.4:4
-	>=x11-libs/qtdeclarative-4.7.4:4
-	>=x11-libs/qtscript-4.7.4:4
-	>=x11-libs/qtsql-4.7.4:4
-	>=x11-libs/qtxmlpatterns-4.7.4:4"
+	>=dev-qt/qtcore-4.7.4:4
+	>=dev-qt/qtgui-4.7.4:4
+	>=dev-qt/qtdbus-4.7.4:4
+	>=dev-qt/qtdeclarative-4.7.4:4
+	>=dev-qt/qtscript-4.7.4:4
+	>=dev-qt/qtsql-4.7.4:4
+	>=dev-qt/qtxmlpatterns-4.7.4:4"
 
 RDEPEND="${DEPEND}"
 RESTRICT="test"
