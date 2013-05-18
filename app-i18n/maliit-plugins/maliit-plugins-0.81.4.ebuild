@@ -22,7 +22,7 @@ DEPEND="=app-i18n/maliit-framework-${PV}
 	>=dev-qt/qtscript-4.7.4:4
 	>=dev-qt/qtsql-4.7.4:4
 	>=dev-qt/qtxmlpatterns-4.7.4:4
-	gtk? ( x11-misc/maliit-framework[gtk] )"
+	gtk? ( app-i18n/maliit-framework[gtk] )"
 
 RDEPEND="${DEPEND}"
 RESTRICT="test"
