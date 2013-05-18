@@ -14,8 +14,14 @@ SLOT="0"
 KEYWORDS="~amd64 ~arm ~x86"
 IUSE="doc gtk test"
 
-DEPEND="x11-misc/maliit-framework
-	dev-qt/qttest
+DEPEND="=app-i18n/maliit-framework-${PV}
+	>=x11-libs/qt-core-4.7.4:4
+	>=x11-libs/qt-gui-4.7.4:4
+	>=x11-libs/qt-dbus-4.7.4:4
+	>=x11-libs/qt-declarative-4.7.4:4
+	>=x11-libs/qt-script-4.7.4:4
+	>=x11-libs/qt-sql-4.7.4:4
+	>=x11-libs/qt-xmlpatterns-4.7.4:4
 	gtk? ( x11-misc/maliit-framework[gtk] )"
 
 RDEPEND="${DEPEND}"
@@ -28,5 +34,5 @@ src_configure() {
 	use !doc && myconf="${myconf} nodoc"
 	use !gtk && myconf="${myconf} nogtk"
 	use !test && myconf="${myconf} notests"
-	qmake PREFIX="${EPREFIX}/usr" CONFIG+="${myconf}"
+	eqmake4 -r CONFIG+="${myconf}"
 }

@@ -17,15 +17,22 @@ IUSE="+dbus doc examples gtk test"
 DEPEND="dbus? ( sys-apps/dbus )
 	gtk? ( x11-libs/gtk+ )
 	gnome-base/gconf
-	dev-qt/qtdeclarative"
+	>=x11-libs/qt-core-4.7.4:4
+	>=x11-libs/qt-gui-4.7.4:4
+	>=x11-libs/qt-dbus-4.7.4:4
+	>=x11-libs/qt-declarative-4.7.4:4
+	>=x11-libs/qt-script-4.7.4:4
+	>=x11-libs/qt-sql-4.7.4:4
+	>=x11-libs/qt-xmlpatterns-4.7.4:4"
+
 RDEPEND="${DEPEND}"
 RESTRICT="test"
 
 DOCS=( README )
 
 src_prepare() {
+	epatch ${FILESDIR}/remove-gconf-register.patch
 	use !examples && sed -i -e 's/ examples//' maliit-framework.pro
-	sed -i -e 's/    install_schemas \\//' src/src.pro
 	qt4-r2_src_prepare
 }
 
@@ -35,7 +42,10 @@ src_configure() {
 	use !doc && myconf="${myconf} nodoc"
 	use !gtk && myconf="${myconf} nogtk"
 	use !test && myconf="${myconf} notests"
-	qmake PREFIX="${EPREFIX}/usr" CONFIG+="${myconf}"
+	eqmake4 -r \
+		M_IM_PREFIX="${EPREFIX}/usr" \
+		M_IM_INSTALL_SCHEMAS="${EPREFIX}/etc/gconf/schemas" \
+		CONFIG+="${myconf}"
 }
 
 src_install() {
@@ -58,4 +68,3 @@ pkg_postrm() {
 	gnome2_gconf_uninstall
 	gnome2_schemas_update
 }
-
