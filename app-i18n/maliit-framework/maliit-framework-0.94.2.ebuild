@@ -12,7 +12,7 @@ SRC_URI="http://maliit.org/releases/${PN}/${PF}.tar.bz2"
 LICENSE="LGPL-2.1"
 SLOT="0"
 KEYWORDS="~amd64 ~arm ~x86"
-IUSE="+dbus doc examples gtk qml test wayland"
+IUSE="+dbus doc examples +gtk qml qdbus test wayland"
 
 DEPEND="dbus? ( sys-apps/dbus )
 	gtk? ( x11-libs/gtk+ )
@@ -37,35 +37,19 @@ src_prepare() {
 }
 
 src_configure() {
-	local myconf="disable-gtk-cache-update nostrip"
-	if use dbus; then
-		myconf="${myconf} enable-dbus-activation"
-	else
-		myconf="${myconf} disable-dbus"
-	fi
-	use !doc && myconf="${myconf} nodoc"
-	use !gtk && myconf="${myconf} nogtk"
-	use !qml && myconf="${myconf} noqml"
-	use !test && myconf="${myconf} notests"
-	use wayland && myconf="${myconf} wayland"
+	local myconf="disable-gtk-cache-update"
+	use dbus &&     myconf="${myconf} enable-dbus-activation"
+	use !dbus &&    myconf="${myconf} disable-dbus"
+	use !doc &&     myconf="${myconf} nodoc"
+	use !gtk &&     myconf="${myconf} nogtk"
+	use !qml &&     myconf="${myconf} noqml"
+	use qbus &&     myconf="${myconf} enable-qdbus"
+	use !test &&    myconf="${myconf} notests"
+	use wayland &&  myconf="${myconf} wayland"
 	eqmake4 -r \
 		CONFIG+="${myconf}"
 }
 
 src_install() {
 	emake DESTDIR="${D}" INSTALL_ROOT="${D}" install
-}
-
-pkg_preinst() {
-	gnome2_gconf_savelist
-}
-
-pkg_postinst() {
-	gnome2_gconf_install
-	gnome2_schemas_update
-}
-
-pkg_postrm() {
-	gnome2_gconf_uninstall
-	gnome2_schemas_update
 }
