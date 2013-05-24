@@ -23,7 +23,8 @@ DEPEND="=app-i18n/maliit-framework-${PV}
 	>=dev-qt/qtsql-4.7.4:4
 	>=dev-qt/qtxmlpatterns-4.7.4:4
 	hunspell? ( app-text/hunspell )
-	nemo? ( app-i18n/maliit-framework[qml] )"
+	nemo? ( app-i18n/maliit-framework[qml] )
+	presage? ( app-text/presage )"
 
 RDEPEND="${DEPEND}"
 RESTRICT="test"
