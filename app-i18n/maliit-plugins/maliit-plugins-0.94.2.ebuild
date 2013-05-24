@@ -12,7 +12,7 @@ SRC_URI="http://maliit.org/releases/${PN}/${PF}.tar.bz2"
 LICENSE="LGPL-2.1"
 SLOT="0"
 KEYWORDS="~amd64 ~arm ~x86"
-IUSE="doc hunspell preedit nemo test"
+IUSE="doc hunspell preedit presage nemo test"
 
 DEPEND="=app-i18n/maliit-framework-${PV}
 	>=dev-qt/qtcore-4.7.4:4
@@ -36,6 +36,7 @@ src_configure() {
 	use hunspell && myconf="${myconf} enable-hunspell"
 	use !test &&    myconf="${myconf} notests"
 	use !preedit && myconf="${myconf} disable-preedit"
+	use presage &&  myconf="${myconf} enable-presage"
 	use !nemo &&    myconf="${myconf} disable-nemo-keyboard"
 	eqmake4 -r \
 		CONFIG+="${myconf}"
