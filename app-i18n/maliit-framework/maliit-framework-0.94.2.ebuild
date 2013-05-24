@@ -43,7 +43,7 @@ src_configure() {
 	use !doc &&     myconf="${myconf} nodoc"
 	use !gtk &&     myconf="${myconf} nogtk"
 	use !qml &&     myconf="${myconf} noqml"
-	use qbus &&     myconf="${myconf} enable-qdbus"
+	use qdbus &&    myconf="${myconf} enable-qdbus"
 	use !test &&    myconf="${myconf} notests"
 	use wayland &&  myconf="${myconf} wayland"
 	eqmake4 -r \
