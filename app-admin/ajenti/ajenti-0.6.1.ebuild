@@ -1,4 +1,4 @@
-# Copyright 1999-2011 Gentoo Foundation
+# Copyright 1999-2013 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
@@ -24,6 +24,7 @@ RDEPEND="dev-python/feedparser
 
 RESTRICT_PYTHON_ABIS="2.4 2.5 3.*"
 
-pkg_preinst() {
-        doinitd "${FILESDIR}/ajenti" || die "doinit install failed"
+src_install() {
+	distutils_src_install
+	doinitd "${FILESDIR}/ajenti"
 }
