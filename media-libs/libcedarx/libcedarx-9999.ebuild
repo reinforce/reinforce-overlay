@@ -5,7 +5,7 @@
 EAPI=4
 inherit git-2 autotools
 
-EGIT_REPO_URI="git://github.com/willswang/libcedarx.git"
+EGIT_REPO_URI="https://github.com/willswang/libcedarx.git"
 
 DESCRIPTION="CedarX is Allwinner's multimedia co-processing technology for hardware accelerated video and image decoding, as used inside their A10 SoC's and others."
 KEYWORDS="~arm"

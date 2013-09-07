@@ -6,7 +6,7 @@ EAPI=4
 inherit base eutils git-2 udev
 
 DESCRIPTION="Sunxi Mali-400 support libraries"
-EGIT_REPO_URI="git://github.com/linux-sunxi/sunxi-mali.git"
+EGIT_REPO_URI="https://github.com/linux-sunxi/sunxi-mali.git"
 EGIT_HAS_SUBMODULES=1
 
 KEYWORDS="~arm"

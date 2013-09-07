@@ -6,7 +6,7 @@ EAPI=4
 inherit git-2
 
 DESCRIPTION="Lima is a free software graphics driver for the ARM Mali GPUs."
-EGIT_REPO_URI="git://gitorious.org/lima/lima.git"
+EGIT_REPO_URI="https://gitorious.org/lima/lima.git"
 
 KEYWORDS="~arm"
 LICENSE="GPLv2" 

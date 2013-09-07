@@ -5,7 +5,7 @@
 EAPI=4
 inherit xorg-2 toolchain-funcs versionator
 
-EGIT_REPO_URI="git://github.com/robclark/libdri2.git"
+EGIT_REPO_URI="https://github.com/robclark/libdri2.git"
 DESCRIPTION="Library for the DRI2 extension to the X Window System"
 
 KEYWORDS="~arm ~amd64 ~x86"

@@ -16,4 +16,4 @@ DESCRIPTION="Public Linux Kernel support for the sunxi family (Allwinner A10, A1
 MY_PV=$(get_version_component_range 1-2)
 
 EGIT_BRANCH="sunxi-${MY_PV}"
-EGIT_REPO_URI="git://github.com/linux-sunxi/linux-sunxi.git"
+EGIT_REPO_URI="https://github.com/linux-sunxi/linux-sunxi.git"

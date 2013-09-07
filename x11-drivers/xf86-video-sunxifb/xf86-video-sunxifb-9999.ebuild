@@ -6,7 +6,7 @@ EAPI=4
 inherit xorg-2 toolchain-funcs versionator
 
 if [[ ${PV} == "9999" ]] ; then
-	EGIT_REPO_URI="git://github.com/ssvb/xf86-video-sunxifb.git"
+	EGIT_REPO_URI="https://github.com/ssvb/xf86-video-sunxifb.git"
 else
 	SRC_URI="https://github.com/ssvb/${PN}/archive/${PV}.tar.gz -> ${P}.tar.gz"
 fi
