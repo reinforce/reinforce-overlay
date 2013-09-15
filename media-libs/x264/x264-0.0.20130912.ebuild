@@ -38,7 +38,7 @@ DOCS="AUTHORS doc/*.txt"
 src_prepare() {
 	# Initial support for x32 ABI, bug #420241
 	# Avoid messing too much with CFLAGS.
-	epatch "${FILESDIR}"/${P}-cflags.patch
+	epatch "${FILESDIR}"/x264-cflags.patch
 }
 
 multilib_src_configure() {
