@@ -1,0 +1,27 @@
+--- aaa/Makefile	2013-09-18 12:02:57.425865615 +0400
++++ bbb/Makefile	2013-09-18 12:08:12.588849533 +0400
+@@ -1,6 +1,7 @@
+ CC=gcc -c
+ LN=gcc
+ CFLAGS= -O2
++DESTDIR=
+ 
+ tabletwm: tabletwm.o globals.o init.o actions.o support.o wincache.o menuwin.o shutdown.o
+ 	$(LN) -o tabletwm tabletwm.o globals.o init.o actions.o support.o wincache.o menuwin.o shutdown.o `pkg-config --libs xcb xcb-util xcb-randr xcb-icccm xcb-keysyms xcb-xtest cairo xkbcommon`
+@@ -34,10 +35,11 @@
+ 	rm -f *.o tabletwm
+ 
+ install:
+-	install -d /etc/tabletwm.d
+-	install tabletwm /usr/local/bin
+-	install tabletwm.cfg.example /etc/tabletwm.d/
+-	install *.keymap /etc/tabletwm.d/
++	install -d $(DESTDIR)/usr/bin
++	install -d $(DESTDIR)/etc/tabletwm.d
++	install tabletwm $(DESTDIR)/usr/bin
++	install tabletwm.cfg.example $(DESTDIR)/etc/tabletwm.d/
++	install *.keymap $(DESTDIR)/etc/tabletwm.d/
+ 
+ uninstall:
+-	rm -rf /usr/local/bin/tabletwm
++	rm -rf $(DESTDIR)/usr/bin/tabletwm
