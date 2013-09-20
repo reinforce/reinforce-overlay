@@ -19,7 +19,3 @@ RDEPEND="x11-libs/cairo[xcb]"
 DEPEND="${RDEPEND}"
 
 DOCS="README.md"
-
-src_prepare() {
-	epatch "${FILESDIR}"/Makefile.patch
-}
