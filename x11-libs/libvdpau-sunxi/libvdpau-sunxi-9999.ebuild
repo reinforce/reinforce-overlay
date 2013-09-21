@@ -6,9 +6,9 @@ EAPI=4
 inherit eutils git-2
 
 DESCRIPTION="Experimental VDPAU implementation for sunxi SoCs."
-HOMEPAGE="https://github.com/jemk/libvdpau-sunxi"
+HOMEPAGE="https://github.com/linux-sunxi/libvdpau-sunxi"
 
-EGIT_REPO_URI="https://github.com/jemk/libvdpau-sunxi.git"
+EGIT_REPO_URI="https://github.com/linux-sunxi/libvdpau-sunxi.git"
 
 LICENSE="GPLv2"
 SLOT="0"
