@@ -1,1 +1,1 @@
-move xf86-video-sunxifb xf86-video-fbturbo
+move x11-drivers/xf86-video-sunxifb x11-drivers/xf86-video-fbturbo
