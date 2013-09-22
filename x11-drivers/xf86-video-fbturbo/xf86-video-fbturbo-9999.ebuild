@@ -6,12 +6,12 @@ EAPI=4
 inherit xorg-2 toolchain-funcs versionator
 
 if [[ ${PV} == "9999" ]] ; then
-	EGIT_REPO_URI="https://github.com/ssvb/xf86-video-sunxifb.git"
+	EGIT_REPO_URI="https://github.com/ssvb/${PN}.git"
 else
-	SRC_URI="https://github.com/ssvb/${PN}/archive/${PV}.tar.gz -> ${P}.tar.gz"
+	SRC_URI="https://github.com/ssvb/${PN}/archive/${P}.tar.gz"
 fi
 
-DESCRIPTION="Xorg DDX driver for the devices based on Allwinner A10/A13 SoC"
+DESCRIPTION="Xorg DDX driver for Allwinner A10/A13 and other ARM devices"
 KEYWORDS="~arm ~amd64 ~x86"
 IUSE="gles1 gles2"
 
