@@ -20,7 +20,8 @@ SLOT="0"
 KEYWORDS="~amd64 ~arm ~x86"
 IUSE=""
 
-RDEPEND="x11-libs/cairo[xcb]"
+RDEPEND="x11-libs/cairo[xcb]
+	x11-libs/libxkbcommon"
 DEPEND="${RDEPEND}"
 
 src_install() {
