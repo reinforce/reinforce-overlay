@@ -18,14 +18,10 @@ RDEPEND="x11-base/xorg-server
 DEPEND="${RDEPEND}"
 
 OPENGL_IMP="mali"
-OPENGL_DIR="/usr/$(get_libdir)/opengl/${OPENGL_IMP}/"
+OPENGL_DIR="/usr/$(get_libdir)/opengl/${OPENGL_IMP}"
 
 src_unpack() {
 	git-2_src_unpack
-}
-
-src_prepare() {
-	epatch "${FILESDIR}"/Gentoo-armhf-ABI.patch
 }
 
 src_compile() {
@@ -45,7 +41,7 @@ src_install() {
 	# Install
 	base_src_install
 
-	# Move libMali and others from /usr/lib to /usr/lib/opengl/blah/lib
+	# Move libMali and others from /usr/lib to /usr/lib/opengl/mali/lib
 	# because user can eselect desired GL provider.
 	ebegin "Moving libMali and friends for dynamic switching"
 		local x
