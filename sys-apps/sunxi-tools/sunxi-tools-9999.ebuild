@@ -12,6 +12,9 @@ KEYWORDS="~amd64 ~arm ~x86"
 IUSE=""
 SLOT="0"
 
+RDEPEND="dev-libs/libusb"
+DEPEND="${RDEPEND}"
+
 src_install() {
 	dobin bootinfo fel fexc nand-part pio || die
 	dosym fexc /usr/bin/fex2bin || die
