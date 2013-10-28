@@ -1,4 +1,4 @@
-# Copyright 1999-2011 Gentoo Foundation
+# Copyright 1999-2013 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
@@ -11,7 +11,7 @@ detect_arch
 
 KEYWORDS="~arm ~x86 ~amd64"
 HOMEPAGE="http://linux-sunxi.org"
-DESCRIPTION="Public Linux Kernel support for the sunxi family (Allwinner A10, A13, ...)"
+DESCRIPTION="Linux source for Allwinner/Boxchip F20 (sun3i), A10 (sun4i), A12/A13/A10S (sun5i) and A20 (sun7i) SoCs"
 
 MY_PV=$(get_version_component_range 1-2)
 
