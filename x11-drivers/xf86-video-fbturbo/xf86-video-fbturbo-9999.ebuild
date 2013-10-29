@@ -1,4 +1,4 @@
-# Copyright 1999-2011 Gentoo Foundation
+# Copyright 1999-2013 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
@@ -13,12 +13,11 @@ fi
 
 DESCRIPTION="Xorg DDX driver for Allwinner A10/A13 and other ARM devices"
 KEYWORDS="~arm ~amd64 ~x86"
-IUSE="gles1 gles2"
+IUSE="gles"
 
 RDEPEND="x11-base/xorg-server"
 DEPEND="${RDEPEND}
-	gles1? ( x11-drivers/mali-drivers[X] )
-	gles2? ( x11-drivers/mali-drivers[X] )
+	gles? ( x11-drivers/mali-drivers[X] )
 	x11-proto/fontsproto
 	x11-proto/randrproto
 	x11-proto/renderproto
