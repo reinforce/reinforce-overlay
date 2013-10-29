@@ -9,7 +9,7 @@ inherit kernel-2 git-2 versionator
 detect_version
 detect_arch
 
-KEYWORDS="~arm ~x86 ~amd64"
+KEYWORDS=""
 HOMEPAGE="http://linux-sunxi.org"
 DESCRIPTION="Linux source for Allwinner/Boxchip F20 (sun3i), A10 (sun4i), A12/A13/A10S (sun5i) and A20 (sun7i) SoCs"
 
