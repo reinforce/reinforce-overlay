@@ -24,3 +24,17 @@ DEPEND="${RDEPEND}
 	x11-proto/videoproto
 	x11-proto/xproto
 "
+
+pkg_postinst() {
+	elog "You need to edit the file /etc/X11/xorg.conf and set:"
+	elog ""
+	elog "        Identifier      \"Allwinner A10/A13 FBDEV\""
+	elog "        Driver          \"fbturbo\""
+	elog "        Option          \"fbdev\" \"/dev/fb0\""
+	elog "        Option          \"SwapbuffersWait\" \"true\""
+	elog ""
+	elog "in the Graphics device section (Section \"Device\")"
+	elog ""
+	elog "Run "man fbturbo" to get additional information about the extra"
+	elog "configuration options for tuning the driver."
+}
