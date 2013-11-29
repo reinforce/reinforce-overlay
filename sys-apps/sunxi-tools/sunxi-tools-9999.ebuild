@@ -12,7 +12,7 @@ KEYWORDS="~amd64 ~arm ~x86"
 IUSE=""
 SLOT="0"
 
-RDEPEND="dev-libs/libusb"
+RDEPEND="virtual/libusb"
 DEPEND="${RDEPEND}"
 
 src_install() {
