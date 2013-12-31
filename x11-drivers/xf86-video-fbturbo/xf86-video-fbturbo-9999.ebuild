@@ -15,9 +15,10 @@ DESCRIPTION="Xorg DDX driver for Allwinner A10/A13 and other ARM devices"
 KEYWORDS="~arm ~amd64 ~x86"
 IUSE="gles"
 
-RDEPEND="x11-base/xorg-server"
-DEPEND="${RDEPEND}
+RDEPEND="x11-base/xorg-server
 	gles? ( x11-drivers/mali-drivers[X] )
+"
+DEPEND="${RDEPEND}
 	x11-proto/fontsproto
 	x11-proto/randrproto
 	x11-proto/renderproto
