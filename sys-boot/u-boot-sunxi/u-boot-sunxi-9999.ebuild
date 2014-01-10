@@ -107,9 +107,14 @@ src_configure() {
 }
 
 src_install() {
-	insinto "/usr/share/${PF}"     && doins u-boot.img
-	insinto "/usr/share/${PF}"     && doins u-boot-sunxi-with-spl.bin
-	insinto "/usr/share/${PF}/spl" && doins spl/sunxi-spl.bin
+	insinto "/usr/share/${PF}" && doins u-boot.img
+
+	# Some boards doesn't have SPL loader, so check it before installing
+	if [[ -f spl/sunxi-spl.bin ]] ; then
+		insinto "/usr/share/${PF}" && doins u-boot-sunxi-with-spl.bin
+		insinto "/usr/share/${PF}/spl" && doins spl/sunxi-spl.bin
+	fi
+
 	dodoc doc/README.*
 
 	ewarn "This build allows booting from SD, over USB and over ethernet,"
@@ -128,5 +133,7 @@ src_install() {
 	elog
 	elog "  dd if=spl/sunxi-spl.bin of=/dev/sdX bs=1024 seek=8"
 	elog "  dd if=u-boot.img of=/dev/sdX bs=1024 seek=40"
+	elog
+	elog "Note that some boards doesn't have SPL loader."
 	elog
 }
