@@ -3,7 +3,7 @@
 # $Header: $
 
 EAPI=4
-inherit base eutils git-2 udev
+inherit base eutils git-2 udev versionator
 
 DESCRIPTION="Sunxi Mali-400 support libraries"
 EGIT_REPO_URI="https://github.com/linux-sunxi/sunxi-mali.git"
@@ -20,6 +20,8 @@ DEPEND="${RDEPEND}"
 OPENGL_IMP="mali"
 OPENGL_DIR="/usr/$(get_libdir)/opengl/${OPENGL_IMP}"
 
+MY_PV=r$(get_version_component_range 1)p$(get_version_component_range 2)
+
 src_unpack() {
 	git-2_src_unpack
 }
@@ -30,7 +32,7 @@ src_compile() {
 	else
 		EGL_TYPE="framebuffer"
 	fi
-	emake EGL_TYPE=${EGL_TYPE} || die
+	emake VERSION=${MY_PV} EGL_TYPE=${EGL_TYPE} || die
 }
 
 src_install() {
