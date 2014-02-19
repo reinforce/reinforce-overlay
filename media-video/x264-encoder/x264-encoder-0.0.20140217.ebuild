@@ -38,6 +38,12 @@ DEPEND="${RDEPEND}
 	x86-fbsd? ( ${ASM_DEP} )
 	virtual/pkgconfig"
 
+src_prepare() {
+	# Revert commit d688957f8bca33fdffdfba2a936d9538ee646273
+	# Because there is no new stable ffmpeg or libav in portage tree.
+	EPATCH_OPTS="-R" epatch "${FILESDIR}"/d688957f8bca33fdffdfba2a936d9538ee646273.patch
+}
+
 src_configure() {
 	tc-export CC
 
