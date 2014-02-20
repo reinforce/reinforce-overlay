@@ -17,9 +17,9 @@ KEYWORDS="~arm"
 # List of sunxi boards. See boards.cfg
 SUNXI_BOARDS="
 	A10_MID_1GB
+	A10-OLinuXino-Lime
 	A10s-OLinuXino-M
 	A10s-OLinuXino-M_FEL
-	A10-OLinuXino-Lime
 	A13-OLinuXino
 	A13-OLinuXino_FEL
 	A13-OLinuXino_FEL_sdcon
@@ -52,6 +52,8 @@ SUNXI_BOARDS="
 	Hackberry
 	Hyundai_A7HD
 	Interra-3
+	INet_86VZ
+	INet_86VZ_FEL
 	INet97F-II
 	INet_K70HC
 	Jesurun-Q5
@@ -86,8 +88,10 @@ SUNXI_BOARDS="
 	sun5i_sdcon
 	sun5i_uart1
 	uhost_u1a
+	Wexler_TAB_7200
 	wobo-i5
 	xzpad700
+	zatab
 "
 
 for board in ${SUNXI_BOARDS}; do
