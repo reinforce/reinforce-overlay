@@ -34,6 +34,8 @@ SUNXI_BOARDS="
 	Coby_MID7042
 	Coby_MID8042
 	Coby_MID9742
+	Iteaduino_Plus_A10
+	Iteaduino_Plus_A20
 	Cubieboard
 	Cubieboard2
 	Cubieboard2_FEL
@@ -50,6 +52,7 @@ SUNXI_BOARDS="
 	Gooseberry_A721
 	H6
 	Hackberry
+	HCore_HC860
 	Hyundai_A7HD
 	Interra-3
 	INet_86VZ
