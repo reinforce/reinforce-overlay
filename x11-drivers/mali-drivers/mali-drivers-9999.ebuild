@@ -1,26 +1,30 @@
-# Copyright 1999-2011 Gentoo Foundation
+# Copyright 1999-2014 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI=4
-inherit base eutils git-2 udev versionator
+EAPI=5
+inherit base eutils git-2 udev
 
 DESCRIPTION="Sunxi Mali-400 support libraries"
+HOMEPAGE="https://github.com/linux-sunxi/sunxi-mali"
+
 EGIT_REPO_URI="https://github.com/linux-sunxi/sunxi-mali.git"
 EGIT_HAS_SUBMODULES=1
 
+LICENSE=""
+SLOT="0"
 KEYWORDS="~arm"
 IUSE="X"
-SLOT="0"
 
 RDEPEND="x11-base/xorg-server
-	x11-libs/libdri2"
+	x11-libs/libdri2
+	x11-libs/libump"
 DEPEND="${RDEPEND}"
 
-OPENGL_IMP="mali"
-OPENGL_DIR="/usr/$(get_libdir)/opengl/${OPENGL_IMP}"
+RESTRICT="strip"
 
-MY_PV=r$(get_version_component_range 1)p$(get_version_component_range 2)
+OPENGL_IMP="mali"
+OPENGL_DIR="usr/$(get_libdir)/opengl/${OPENGL_IMP}"
 
 src_unpack() {
 	git-2_src_unpack
@@ -32,39 +36,36 @@ src_compile() {
 	else
 		EGL_TYPE="framebuffer"
 	fi
-	emake VERSION=${MY_PV} EGL_TYPE=${EGL_TYPE} || die
+	emake EGL_TYPE=${EGL_TYPE} || die
 }
 
 src_install() {
 	# Create dirs
-	dodir usr/$(get_libdir)
-	dodir usr/include/ump
+	dodir ${OPENGL_DIR}/{lib,extensions,include}
 
 	# Install
 	base_src_install
 
-	# Move libMali and others from /usr/lib to /usr/lib/opengl/mali/lib
+	# Move libs and headers from /usr to /usr/lib/opengl/mali
 	# because user can eselect desired GL provider.
-	ebegin "Moving libMali and friends for dynamic switching"
+	ebegin "Moving libs and headers for dynamic switching"
 		local x
-		dodir ${OPENGL_DIR}/{lib,extensions,include}
-		for x in "${ED}"/usr/$(get_libdir)/lib{EGL,GL*,Mali,UMP}.{la,a,so*}; do
+		for x in "${ED}"/usr/$(get_libdir)/lib{EGL,GL*}.{la,a,so*}; do
 			if [ -f ${x} -o -L ${x} ]; then
-				mv -f "${x}" "${ED}${OPENGL_DIR}"/lib \
+				mv -f "${x}" "${ED}/${OPENGL_DIR}"/lib \
 					|| die "Failed to move ${x}"
 			fi
 		done
 		for x in "${ED}"/usr/include/{EGL,GLES*,KHR}; do
 			if [ -d ${x} ]; then
-				mv -f "${x}" "${ED}${OPENGL_DIR}"/include \
+				mv -f "${x}" "${ED}/${OPENGL_DIR}"/include \
 					|| die "Failed to move ${x}"
 			fi
 		done
 	eend $?
 
-	# Make the symlinks for libMali.so and libUMP.so
-	dosym "opengl/${OPENGL_IMP}/lib/libMali.so" "/usr/$(get_libdir)/libMali.so"
-	dosym "opengl/${OPENGL_IMP}/lib/libUMP.so" "/usr/$(get_libdir)/libUMP.so"
+	# Make the symlinks for libMali.so
+	dosym "../../../libMali.so" "${OPENGL_DIR}/lib/libMali.so"
 
 	# Fallback to mesa for libGL.so
 	dosym "../../xorg-x11/lib/libGL.so" "${OPENGL_DIR}/lib/libGL.so"
