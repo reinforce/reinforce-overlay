@@ -77,6 +77,7 @@ SUNXI_BOARDS="
 	mk802_a10s
 	mk802ii_A20
 	mk802ii
+	mk808c_A20
 	pcDuino
 	pengpod1000
 	pengpod700
