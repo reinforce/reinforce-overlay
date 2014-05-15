@@ -36,12 +36,13 @@ SUNXI_BOARDS="
 	Coby_MID9742
 	Iteaduino_Plus_A10
 	Iteaduino_Plus_A20
+	Colombus
+	Ippo_q8h
 	Cubieboard
 	Cubieboard2
 	Cubieboard2_FEL
 	Cubietruck
 	Cubietruck_FEL
-	Cubieboard_512
 	Cubieboard_FEL
 	DNS_M82
 	EOMA68_A10
