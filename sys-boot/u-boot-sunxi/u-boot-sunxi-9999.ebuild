@@ -28,9 +28,12 @@ SUNXI_BOARDS="
 	A13_MID
 	A20-OLinuXino_MICRO
 	A20-OLinuXino_MICRO_FEL
+	A20-SOM
 	Auxtek-T003
 	Auxtek-T004
 	ba10_tv_box
+	Bananapi
+	Bananapi_FEL
 	Coby_MID7042
 	Coby_MID8042
 	Coby_MID9742
@@ -55,6 +58,7 @@ SUNXI_BOARDS="
 	Hackberry
 	HCore_HC860
 	Hyundai_A7HD
+	i12-tvbox
 	Interra-3
 	INet_86VZ
 	INet_86VZ_FEL
@@ -62,6 +66,7 @@ SUNXI_BOARDS="
 	INet_K70HC
 	Jesurun-Q5
 	K1001L1C
+	Linksprite_pcDuino3
 	Marsboard_A10
 	Marsboard_A20
 	Marsboard_A20_debug
@@ -70,6 +75,7 @@ SUNXI_BOARDS="
 	Mele_A1000_FEL
 	Mele_A1000G
 	Mele_A3700
+	merrii_m2
 	Mini-X
 	Mini-X-1Gb
 	Mini-X_A10s
@@ -85,6 +91,7 @@ SUNXI_BOARDS="
 	PoV_ProTab2_IPS9
 	PoV_ProTab2_IPS_3g
 	PoV_ProTab2_XXL
+	qt840a
 	r7-tv-dongle
 	Sanei_N90
 	sun4i
@@ -97,6 +104,9 @@ SUNXI_BOARDS="
 	wobo-i5
 	xzpad700
 	zatab
+	OLIMEX-A13-SOM
+	A20-OLinuXino_Lime
+	A20-OLinuXino_Lime2
 "
 
 for board in ${SUNXI_BOARDS}; do
