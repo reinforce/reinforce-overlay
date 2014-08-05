@@ -26,6 +26,8 @@ SUNXI_BOARDS="
 	A13-OLinuXinoM
 	A13-OLinuXinoM_FEL
 	A13_MID
+	A20-OLinuXino_Lime
+	A20-OLinuXino_Lime2
 	A20-OLinuXino_MICRO
 	A20-OLinuXino_MICRO_FEL
 	A20-SOM
@@ -56,7 +58,9 @@ SUNXI_BOARDS="
 	Gooseberry_A721
 	H6
 	Hackberry
+	HBD_MID_S906
 	HCore_HC860
+	Hyundai_A7
 	Hyundai_A7HD
 	i12-tvbox
 	Interra-3
@@ -85,6 +89,7 @@ SUNXI_BOARDS="
 	mk802ii_A20
 	mk802ii
 	mk808c_A20
+	OLIMEX-A13-SOM
 	pcDuino
 	pengpod1000
 	pengpod700
@@ -104,9 +109,6 @@ SUNXI_BOARDS="
 	wobo-i5
 	xzpad700
 	zatab
-	OLIMEX-A13-SOM
-	A20-OLinuXino_Lime
-	A20-OLinuXino_Lime2
 "
 
 for board in ${SUNXI_BOARDS}; do
