@@ -3,7 +3,7 @@
 # $Header: $
 
 EAPI=5
-inherit base eutils git-2 udev
+inherit base eutils git-2 multilib udev
 
 DESCRIPTION="Sunxi Mali-400 support libraries"
 HOMEPAGE="https://github.com/linux-sunxi/sunxi-mali"
@@ -36,7 +36,7 @@ src_compile() {
 	else
 		EGL_TYPE="framebuffer"
 	fi
-	emake EGL_TYPE=${EGL_TYPE} || die
+	emake ABI=armhf EGL_TYPE=${EGL_TYPE} || die
 }
 
 src_install() {
