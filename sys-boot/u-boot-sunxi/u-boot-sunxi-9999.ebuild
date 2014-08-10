@@ -63,6 +63,7 @@ SUNXI_BOARDS="
 	Hyundai_A7
 	Hyundai_A7HD
 	i12-tvbox
+	ICOU_Fatty_I
 	Interra-3
 	INet_86VZ
 	INet_86VZ_FEL
