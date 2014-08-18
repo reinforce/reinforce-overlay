@@ -15,12 +15,8 @@ SLOT="0"
 RDEPEND="virtual/libusb"
 DEPEND="${RDEPEND}"
 
-src_prepare() {
-	sed -i -e "s/TOOLS += nand-part/TOOLS += meminfo nand-part/" Makefile
-}
-
 src_install() {
-	dobin bootinfo fel fexc meminfo nand-part pio || die
+	dobin bootinfo fel fexc nand-part pio || die
 	dosym fexc /usr/bin/fex2bin || die
 	dosym fexc /usr/bin/bin2fex || die
 }
