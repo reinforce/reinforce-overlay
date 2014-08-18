@@ -31,6 +31,7 @@ SUNXI_BOARDS="
 	A20-OLinuXino_MICRO
 	A20-OLinuXino_MICRO_FEL
 	A20-SOM
+	Ainol_AW1
 	Auxtek-T003
 	Auxtek-T004
 	ba10_tv_box
@@ -55,6 +56,7 @@ SUNXI_BOARDS="
 	EOMA68_A20
 	EOMA68_A20_FEL
 	EU3000
+	Forfun_Q88DB
 	Gooseberry_A721
 	H6
 	Hackberry
@@ -71,6 +73,7 @@ SUNXI_BOARDS="
 	INet_K70HC
 	Jesurun-Q5
 	K1001L1C
+	Langcent_H6S
 	Linksprite_pcDuino3
 	Marsboard_A10
 	Marsboard_A20
@@ -80,6 +83,7 @@ SUNXI_BOARDS="
 	Mele_A1000_FEL
 	Mele_A1000G
 	Mele_A3700
+	Merrii_Hummingbird_A20
 	merrii_m2
 	Mini-X
 	Mini-X-1Gb
@@ -94,6 +98,7 @@ SUNXI_BOARDS="
 	pcDuino
 	pengpod1000
 	pengpod700
+	POV_TAB_P703
 	PoV_ProTab2_IPS9
 	PoV_ProTab2_IPS_3g
 	PoV_ProTab2_XXL
