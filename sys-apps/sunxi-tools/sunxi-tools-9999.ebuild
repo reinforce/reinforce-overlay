@@ -16,7 +16,7 @@ RDEPEND="virtual/libusb"
 DEPEND="${RDEPEND}"
 
 src_install() {
-	dobin bootinfo fel fexc nand-part pio || die
+	dobin bootinfo fel fel-gpio fel-pio fel-sdboot fexc meminfo nand-part phoenix_info pio usb-boot || die
 	dosym fexc /usr/bin/fex2bin || die
 	dosym fexc /usr/bin/bin2fex || die
 }
