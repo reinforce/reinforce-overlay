@@ -73,6 +73,7 @@ SUNXI_BOARDS="
 	INet_K70HC
 	Jesurun-Q5
 	K1001L1C
+	Kurio_7S
 	Langcent_H6S
 	Linksprite_pcDuino3
 	Marsboard_A10
@@ -98,6 +99,7 @@ SUNXI_BOARDS="
 	pcDuino
 	pengpod1000
 	pengpod700
+	pineriver-h25
 	POV_TAB_P703
 	PoV_ProTab2_IPS9
 	PoV_ProTab2_IPS_3g
@@ -105,6 +107,7 @@ SUNXI_BOARDS="
 	qt840a
 	r7-tv-dongle
 	Sanei_N90
+	Semitime_G2
 	sun4i
 	sun4i_sdcon
 	sun5i
