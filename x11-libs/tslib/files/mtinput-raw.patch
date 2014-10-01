@@ -5,7 +5,7 @@ diff -urNp b/configure.ac a/configure.ac
  AC_MSG_RESULT($input_module)
  AM_CONDITIONAL(ENABLE_INPUT_MODULE, test "$input_module" = "yes")
  
-+AC_MSG_CHECKING([whether multi-touch input module is requested--test jiangshan])
++AC_MSG_CHECKING([whether multi-touch input module is requested])
 +AC_ARG_ENABLE(mtinput,
 +        AS_HELP_STRING([--enable-mtinput],
 +                [Enable building of generic multi-touch input raw module (Linux /dev/input/eventN support) (default=yes)]),
