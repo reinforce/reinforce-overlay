@@ -15,7 +15,7 @@ SRC_URI="mirror://berlios/${PN}/${P}.tar.bz2
 LICENSE="LGPL-2"
 SLOT="0"
 KEYWORDS="~alpha ~amd64 arm hppa ~ia64 ~m68k ~mips ~ppc ~ppc64 ~s390 ~sh ~sparc ~x86"
-IUSE="multitouch"
+IUSE=""
 #extras arctic2 collie corgi h3600 linear-h2200 mk712 ucb1x00"
 
 DOCS=( AUTHORS NEWS README )
@@ -23,7 +23,7 @@ DOCS=( AUTHORS NEWS README )
 src_prepare() {
 	# patches come from buildroot + openembedded + suse
 	EPATCH_SUFFIX=patch epatch "${WORKDIR}"/patch
-	use multitouch && epatch "${FILESDIR}"/mtinput-raw.patch
+	epatch "${FILESDIR}"/mtinput-raw.patch
 	eautoreconf
 }
 
@@ -33,7 +33,8 @@ multilib_src_configure() {
 	econf \
 		--enable-linear --enable-dejitter \
 		--enable-variance --enable-pthres \
-		--enable-input --enable-shared \
+		--enable-input --enable-mtinput \
+		--enable-shared \
 		--enable-arctic2 --enable-collie \
 		--enable-corgi --enable-h3600 \
 		--enable-linear-h2200 --enable-mk712 \

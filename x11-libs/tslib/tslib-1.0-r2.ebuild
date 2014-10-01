@@ -30,7 +30,8 @@ src_configure() {
 	econf \
 		--enable-linear --enable-dejitter \
 		--enable-variance --enable-pthres \
-		--enable-input --enable-shared \
+		--enable-input --enable-mtinput \
+		--enable-shared \
 		--enable-arctic2 --enable-collie \
 		--enable-corgi --enable-h3600 \
 		--enable-linear-h2200 --enable-mk712 \
