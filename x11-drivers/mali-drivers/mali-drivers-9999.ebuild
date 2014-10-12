@@ -23,53 +23,31 @@ DEPEND="${RDEPEND}"
 
 RESTRICT="strip"
 
-OPENGL_IMP="mali"
-OPENGL_DIR="usr/$(get_libdir)/opengl/${OPENGL_IMP}"
+#src_unpack() {
+#	git-2_src_unpack
+#}
 
-src_unpack() {
-	git-2_src_unpack
-}
-
-src_compile() {
+src_configure() {
 	if use X; then
-		EGL_TYPE="x11"
+		emake config ABI=armhf EGL_TYPE=x11 || die
 	else
-		EGL_TYPE="framebuffer"
+		emake config ABI=armhf EGL_TYPE=framebuffer || die
 	fi
-	emake ABI=armhf EGL_TYPE=${EGL_TYPE} || die
 }
 
 src_install() {
+	local opengl_imp=mali
+	local opengl_dir=/usr/$(get_libdir)/opengl/${opengl_imp}/
+
 	# Create dirs
-	dodir ${OPENGL_DIR}/{lib,extensions,include}
+	dodir ${opengl_dir}/{lib,extensions,include}
 
 	# Install
-	base_src_install
-
-	# Move libs and headers from /usr to /usr/lib/opengl/mali
-	# because user can eselect desired GL provider.
-	ebegin "Moving libs and headers for dynamic switching"
-		local x
-		for x in "${ED}"/usr/$(get_libdir)/lib{EGL,GL*}.{la,a,so*}; do
-			if [ -f ${x} -o -L ${x} ]; then
-				mv -f "${x}" "${ED}/${OPENGL_DIR}"/lib \
-					|| die "Failed to move ${x}"
-			fi
-		done
-		for x in "${ED}"/usr/include/{EGL,GLES*,KHR}; do
-			if [ -d ${x} ]; then
-				mv -f "${x}" "${ED}/${OPENGL_DIR}"/include \
-					|| die "Failed to move ${x}"
-			fi
-		done
-	eend $?
-
-	# Make the symlinks for libMali.so
-	dosym "../../../libMali.so" "${OPENGL_DIR}/lib/libMali.so"
+	emake DESTDIR="${D}" prefix="${opengl_dir}" install
 
 	# Fallback to mesa for libGL.so
-	dosym "../../xorg-x11/lib/libGL.so" "${OPENGL_DIR}/lib/libGL.so"
-	dosym "../../xorg-x11/lib/libGL.so.1" "${OPENGL_DIR}/lib/libGL.so.1"
+	dosym "../../xorg-x11/lib/libGL.so" "${opengl_dir}/lib/libGL.so"
+	dosym "../../xorg-x11/lib/libGL.so.1" "${opengl_dir}/lib/libGL.so.1"
 
 	# Udev rules to get the right ownership/permission for /dev/ump and /dev/mali
 	udev_newrules "${FILESDIR}"/99-mali-drivers.rules 99-mali-drivers.rules
@@ -77,5 +55,5 @@ src_install() {
 
 pkg_postinst() {
 	elog "You must be in the video group to use the Mali 3D acceleration."
-	elog "To use the Mali OpenGL ES libraries, run \"eselect opengl set ${OPENGL_IMP}\""
+	elog "To use the Mali OpenGL ES libraries, run \"eselect opengl set mali\""
 }
