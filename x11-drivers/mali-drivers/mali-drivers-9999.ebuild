@@ -23,10 +23,6 @@ DEPEND="${RDEPEND}"
 
 RESTRICT="strip"
 
-#src_unpack() {
-#	git-2_src_unpack
-#}
-
 src_configure() {
 	if use X; then
 		emake config ABI=armhf EGL_TYPE=x11 || die
