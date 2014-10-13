@@ -25,9 +25,9 @@ RESTRICT="strip"
 
 src_configure() {
 	if use X; then
-		emake config ABI=armhf EGL_TYPE=x11 || die
+		emake config ABI=armhf EGL_TYPE=x11 VERSION=r3p0 || die
 	else
-		emake config ABI=armhf EGL_TYPE=framebuffer || die
+		emake config ABI=armhf EGL_TYPE=framebuffer VERSION=r3p0 || die
 	fi
 }
 
@@ -38,8 +38,17 @@ src_install() {
 	# Create dirs
 	dodir ${opengl_dir}/{lib,extensions,include}
 
-	# Install
+	# Install to opengl_dir because user can eselect desired GL provider.
 	emake DESTDIR="${D}" prefix="${opengl_dir}" install
+
+	# Workaround for eselect
+	cd "${D}/${opengl_dir}/lib"
+	rm -f libEGL.so.1.4
+	$(tc-getCC) ${CFLAGS} -shared -Wl,-soname,libEGL.so.1 -o libEGL.so.1.4 libMali.so
+	rm -f libGLESv1_CM.so.1.1
+	$(tc-getCC) ${CFLAGS} -shared -Wl,-soname,libGLESv1_CM.so.1 -o libGLESv1_CM.so.1.1 libMali.so
+	rm -f libGLESv2.so.2.0
+	$(tc-getCC) ${CFLAGS} -shared -Wl,-soname,libGLESv2.so.2 -o libGLESv2.so.2.0 libMali.so
 
 	# Fallback to mesa for libGL.so
 	dosym "../../xorg-x11/lib/libGL.so" "${opengl_dir}/lib/libGL.so"
