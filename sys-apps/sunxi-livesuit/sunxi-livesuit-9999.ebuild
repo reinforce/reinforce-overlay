@@ -1,4 +1,4 @@
-# Copyright 1999-2014 Gentoo Foundation
+# Copyright 1999-2016 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
@@ -15,7 +15,23 @@ KEYWORDS="~amd64 ~x86"
 IUSE=""
 RESTRICT="bindist strip"
 
-RDEPEND="virtual/libusb"
+RDEPEND="app-arch/bzip2
+	dev-libs/expat
+	dev-libs/libffi
+	media-libs/fontconfig
+	media-libs/freetype
+	media-libs/libpng:1.2
+	media-libs/libpng:1.6
+	sys-apps/util-linux
+	x11-libs/libICE
+	x11-libs/libSM
+	x11-libs/libX11
+	x11-libs/libXau
+	x11-libs/libXdmcp
+	x11-libs/libXext
+	x11-libs/libXrender
+	x11-libs/libxcb	
+	virtual/libusb"
 DEPEND="${RDEPEND}"
 
 BUILD_TARGETS="modules"
