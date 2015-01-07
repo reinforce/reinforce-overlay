@@ -21,7 +21,7 @@ RDEPEND="app-arch/bzip2
 	media-libs/fontconfig
 	media-libs/freetype
 	media-libs/libpng:1.2
-	media-libs/libpng:1.6
+	media-libs/libpng:0/16
 	sys-apps/util-linux
 	x11-libs/libICE
 	x11-libs/libSM
