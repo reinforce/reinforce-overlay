@@ -4,10 +4,10 @@
 
 EAPI=5
 
-inherit qt4-r2 gnome2-utils
+inherit qt4-r2
 DESCRIPTION="A flexible and cross platform input method framework"
-HOMEPAGE="http://maliit.org"
-SRC_URI="http://maliit.org/releases/${PN}/${PF}.tar.bz2"
+HOMEPAGE="https://github.com/maliit"
+SRC_URI="https://github.com/maliit/framework/archive/${PV}.tar.gz -> ${PF}.tar.gz"
 
 LICENSE="LGPL-2.1"
 SLOT="0"
@@ -29,12 +29,16 @@ DEPEND="dbus? ( sys-apps/dbus )
 RDEPEND="${DEPEND}"
 RESTRICT="test"
 
+PATCHES=( "${FILESDIR}/${PN}-0.94.0-removeldconfig.patch" )
+
 DOCS=( README )
 
 src_prepare() {
-	use !examples && sed -i -e 's/ examples//' maliit-framework.pro
+	use !examples && sed -i -e 's/SUBDIRS += examples//' maliit-framework.pro
 	qt4-r2_src_prepare
 }
+
+S="${WORKDIR}/framework-${PV}"
 
 src_configure() {
 	local myconf="disable-gtk-cache-update"
@@ -48,8 +52,4 @@ src_configure() {
 	use wayland &&  myconf="${myconf} wayland"
 	eqmake4 -r \
 		CONFIG+="${myconf}"
-}
-
-src_install() {
-	emake DESTDIR="${D}" INSTALL_ROOT="${D}" install
 }

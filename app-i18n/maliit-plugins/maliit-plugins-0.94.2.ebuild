@@ -6,8 +6,8 @@ EAPI=5
 
 inherit qt4-r2
 DESCRIPTION="Plugins for Maliit Framework"
-HOMEPAGE="http://maliit.org"
-SRC_URI="http://maliit.org/releases/${PN}/${PF}.tar.bz2"
+HOMEPAGE="https://github.com/maliit"
+SRC_URI="https://github.com/maliit/plugins/archive/${PV}.tar.gz -> ${PF}.tar.gz"
 
 LICENSE="LGPL-2.1"
 SLOT="0"
@@ -30,6 +30,8 @@ RDEPEND="${DEPEND}"
 RESTRICT="test"
 
 DOCS=( README )
+
+S="${WORKDIR}/plugins-${PV}"
 
 src_configure() {
 	local myconf=""
