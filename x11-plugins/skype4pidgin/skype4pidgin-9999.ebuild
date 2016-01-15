@@ -17,7 +17,7 @@ fi
 
 DESCRIPTION="Skype (HTTP) API Plugin for Pidgin"
 HOMEPAGE="http://eion.robbmob.com/"
-LICENSE="GPL-2"
+LICENSE="GPL-3+"
 IUSE=""
 SLOT="0"
 
