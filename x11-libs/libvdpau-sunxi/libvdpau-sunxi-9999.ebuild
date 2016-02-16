@@ -23,7 +23,8 @@ IUSE=""
 
 DOCS="README"
 
-RDEPEND="x11-libs/libX11
+RDEPEND="media-libs/libcedrus
+	x11-libs/libX11
 	x11-libs/libvdpau
 	x11-drivers/mali-drivers"
 
