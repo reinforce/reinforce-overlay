@@ -45,7 +45,7 @@ src_configure() {
 
 	emake config ABI=armhf EGL_TYPE="${egl_type}" VERSION="${mali_version}" || die
 
-        touch .gles-only
+	touch .gles-only
 }
 
 src_install() {
