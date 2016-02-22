@@ -1,4 +1,4 @@
-# Copyright 1999-2014 Gentoo Foundation
+# Copyright 1999-2016 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
@@ -11,51 +11,59 @@ HOMEPAGE="https://github.com/linux-sunxi/sunxi-mali"
 EGIT_REPO_URI="https://github.com/linux-sunxi/sunxi-mali.git"
 EGIT_HAS_SUBMODULES=1
 
-LICENSE=""
+LICENSE="unknown"
 SLOT="0"
 KEYWORDS="~arm"
 IUSE="X"
 
-RDEPEND="x11-base/xorg-server
-	x11-libs/libdri2
-	x11-libs/libump"
-DEPEND="${RDEPEND}"
+COMMON="
+	X? (
+		>=app-eselect/eselect-opengl-1.0.9
+	)
+"
+
+DEPEND="
+	${COMMON}
+"
+
+RDEPEND="
+	${COMMON}
+	X? (
+		x11-base/xorg-server
+		x11-libs/libdri2
+	)
+	x11-libs/libump
+"
 
 RESTRICT="strip"
 
 src_configure() {
-	if use X; then
-		emake config ABI=armhf EGL_TYPE=x11 VERSION=r3p0 || die
-	else
-		emake config ABI=armhf EGL_TYPE=framebuffer VERSION=r3p0 || die
-	fi
+	local egl_type="framebuffer"
+	local mali_version="r3p0"
+
+	use X && egl_type="x11"
+
+	emake config ABI=armhf EGL_TYPE="${egl_type}" VERSION="${mali_version}" || die
+
+        touch .gles-only
 }
 
 src_install() {
-	local opengl_imp=mali
-	local opengl_dir=/usr/$(get_libdir)/opengl/${opengl_imp}/
+	local opengl_imp="mali"
+	local opengl_dir="/usr/$(get_libdir)/opengl/${opengl_imp}"
 
 	# Create dirs
-	dodir ${opengl_dir}/{lib,extensions,include}
+	dodir "${opengl_dir}"/{lib,extensions,include}
 
 	# Install to opengl_dir because user can eselect desired GL provider.
-	emake DESTDIR="${D}" prefix="${opengl_dir}" install
-
-	# Workaround for eselect
-	cd "${D}/${opengl_dir}/lib"
-	rm -f libEGL.so.1.4
-	$(tc-getCC) ${CFLAGS} -shared -Wl,-soname,libEGL.so.1 -o libEGL.so.1.4 libMali.so
-	rm -f libGLESv1_CM.so.1.1
-	$(tc-getCC) ${CFLAGS} -shared -Wl,-soname,libGLESv1_CM.so.1 -o libGLESv1_CM.so.1.1 libMali.so
-	rm -f libGLESv2.so.2.0
-	$(tc-getCC) ${CFLAGS} -shared -Wl,-soname,libGLESv2.so.2 -o libGLESv2.so.2.0 libMali.so
-
-	# Fallback to mesa for libGL.so
-	dosym "../../xorg-x11/lib/libGL.so" "${opengl_dir}/lib/libGL.so"
-	dosym "../../xorg-x11/lib/libGL.so.1" "${opengl_dir}/lib/libGL.so.1"
+	emake DESTDIR="${D}" prefix="${opengl_dir}"/ install
 
 	# Udev rules to get the right ownership/permission for /dev/ump and /dev/mali
 	udev_newrules "${FILESDIR}"/99-mali-drivers.rules 99-mali-drivers.rules
+
+	# libMali provides only gles implementation
+	insinto "${opengl_dir}"
+	doins .gles-only
 }
 
 pkg_postinst() {
