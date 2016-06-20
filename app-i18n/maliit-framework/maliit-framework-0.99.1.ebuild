@@ -33,6 +33,7 @@ src_prepare() {
 	epatch "${FILESDIR}/${PF}-Move-GDBus-code-generation-to-maliit-glib.patch"
 	epatch "${FILESDIR}/${PF}-Remove-framework-dependency-from-maliit-glib.pc.patch"
 	epatch "${FILESDIR}/${PF}-Use-cmake-instead-of-qmake-as-build-system.patch"
+	epatch "${FILESDIR}/${PF}-Export-cmake-targets-for-Maliit-Plugins-and-GLib.patch"
 }
 
 src_configure() {
