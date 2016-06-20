@@ -1,0 +1,3834 @@
+From 7471153ce8dadc212f2a4bad5e28bb2fba11a799 Mon Sep 17 00:00:00 2001
+From: Jan Arne Petersen <janarne@gmail.com>
+Date: Wed, 18 Nov 2015 21:26:04 +0100
+Subject: [PATCH] Use cmake instead of qmake as build system
+
+Remove old build system and unused files.
+
+Does not install tests anymore (for now). Does not build documentation
+for maliit-glib (for now). Wayland support needs to be fixed also.
+
+Fixes: maliit/framework#18
+---
+ .gitignore                                         |   2 +-
+ CMakeLists.txt                                     | 478 +++++++++++++++++++++
+ NEWS                                               |   8 +-
+ VERSION                                            |   1 -
+ cmake/FindGIO.cmake                                |  65 +++
+ cmake/FindGLib2.cmake                              |  56 +++
+ cmake/FindXCB.cmake                                |  53 +++
+ cmake/Findudev.cmake                               |  77 ++++
+ common/common.pro                                  |  43 --
+ common/libmaliit-common.pri                        |   7 -
+ common/maliit-framework.pc.in                      |  12 +-
+ common/maliit-framework.prf.in                     |   2 +-
+ config.pri                                         | 226 ----------
+ connection/connection.pro                          |  96 -----
+ connection/dbusinputcontextconnection.cpp          |   2 +-
+ connection/dbusserverconnection.cpp                |   2 +-
+ connection/libmaliit-connection.pri                |  17 -
+ connection/org.maliit.server.service.in            |   2 +-
+ dbus_interfaces/dbus_interfaces.pri                |   4 -
+ dbus_interfaces/dbus_interfaces.pro                |  11 -
+ defines.pri                                        |  16 -
+ doc/Doxyfile.in                                    | 154 +++++++
+ doc/doc.pro                                        |  41 --
+ doc/mdoxy.cfg.in                                   | 156 -------
+ doc/tr.sed                                         |   3 -
+ doc/xmlize.pl                                      |  40 --
+ examples/apps/apps.pro                             |   3 -
+ examples/apps/plainqt/plainqt.pro                  |  46 --
+ examples/examples.pro                              |   2 -
+ examples/plugins/cxx/cxx.pro                       |   2 -
+ examples/plugins/cxx/helloworld/helloworld.pro     |  50 ---
+ examples/plugins/cxx/override/override.pro         |  50 ---
+ examples/plugins/plugins.pro                       |   2 -
+ examples/plugins/qml/.gitignore                    |   1 -
+ examples/plugins/qml/cyclekeys/cyclekeys.pro       |  50 ---
+ examples/plugins/qml/helloworld/helloworld.pro     |  44 --
+ examples/plugins/qml/override/override.pro         |  48 ---
+ examples/plugins/qml/qml.pro                       |   2 -
+ input-context/input-context.pro                    |  24 --
+ maliit-framework.pro                               |  90 ----
+ maliit-glib/libmaliit-glib.pri                     |  10 -
+ maliit-glib/maliit-glib.pc.in                      |  14 +-
+ maliit-glib/maliit-glib.pro                        | 118 -----
+ maliit-glib/maliitbus.h                            |   4 +-
+ passthroughserver/.gitignore                       |   1 -
+ passthroughserver/devices.txt                      |   3 -
+ passthroughserver/passthroughserver.pro            |  36 --
+ src/.gitignore                                     |   9 +-
+ src/README                                         |   0
+ src/config.h.in                                    |  25 --
+ src/libmaliit-plugins.pri                          |   7 -
+ src/maliit-defines.prf.in                          |   8 +-
+ src/maliit-plugins.pc.in                           |  23 +-
+ src/maliit-plugins.prf.in                          |   4 +-
+ src/maliit-server.pc.in                            |  22 +-
+ src/mimonscreenplugins.cpp                         |   1 -
+ src/mimsettings.cpp                                |   1 -
+ src/src.pro                                        | 193 ---------
+ tests/.gitignore                                   |   4 -
+ tests/common_check.pri                             |  32 --
+ tests/common_top.pri                               |  38 --
+ tests/dummyimplugin/dummyimplugin.pro              |  45 --
+ tests/dummyimplugin2/dummyimplugin2.pro            |  34 --
+ tests/dummyimplugin3/dummyimplugin3.pro            |  41 --
+ tests/dummyimplugins.pri                           |  11 -
+ tests/dummyplugin/dummyplugin.pro                  |  34 --
+ tests/ft_exampleplugin/ft_exampleplugin.pro        |  20 -
+ tests/ft_mimpluginmanager/ft_mimpluginmanager.pro  |  25 --
+ tests/qtestlib2junitxml.xsl                        |  82 ----
+ tests/sanitychecks/sanitychecks.pro                |  10 -
+ tests/tests.pro                                    |  32 --
+ .../ut_maliit_glib_settings.pro                    |  15 -
+ .../ut_mattributeextensionmanager.pro              |  21 -
+ .../ut_mimonscreenplugins.cpp                      |   1 -
+ .../ut_mimonscreenplugins.pro                      |  11 -
+ tests/ut_mimpluginmanager/ut_mimpluginmanager.pro  |  25 --
+ .../ut_mimpluginmanagerconfig.cpp                  |   5 -
+ .../ut_mimpluginmanagerconfig.pro                  |  23 -
+ tests/ut_mimserveroptions/ut_mimserveroptions.pro  |  12 -
+ tests/ut_mimsettings/ut_mimsettings.pro            |  13 -
+ tests/ut_minputmethodquickplugin/.gitignore        |   3 +-
+ .../ut_minputmethodquickplugin.pro                 |  22 -
+ tests/ut_mkeyoverride/ut_mkeyoverride.pro          |  18 -
+ weston-protocols/.gitignore                        |   4 -
+ weston-protocols/dummy.cpp                         |   2 -
+ weston-protocols/libmaliit-weston-protocols.pri    |  12 -
+ weston-protocols/weston-protocols.pro              |  27 --
+ 87 files changed, 943 insertions(+), 2146 deletions(-)
+ create mode 100644 CMakeLists.txt
+ delete mode 100644 VERSION
+ create mode 100644 cmake/FindGIO.cmake
+ create mode 100644 cmake/FindGLib2.cmake
+ create mode 100644 cmake/FindXCB.cmake
+ create mode 100644 cmake/Findudev.cmake
+ delete mode 100644 common/common.pro
+ delete mode 100644 common/libmaliit-common.pri
+ delete mode 100644 config.pri
+ delete mode 100644 connection/connection.pro
+ delete mode 100644 connection/libmaliit-connection.pri
+ delete mode 100644 dbus_interfaces/dbus_interfaces.pri
+ delete mode 100644 dbus_interfaces/dbus_interfaces.pro
+ delete mode 100644 defines.pri
+ create mode 100644 doc/Doxyfile.in
+ delete mode 100644 doc/doc.pro
+ delete mode 100644 doc/mdoxy.cfg.in
+ delete mode 100644 doc/tr.sed
+ delete mode 100755 doc/xmlize.pl
+ delete mode 100644 examples/apps/apps.pro
+ delete mode 100644 examples/apps/plainqt/plainqt.pro
+ delete mode 100644 examples/examples.pro
+ delete mode 100644 examples/plugins/cxx/cxx.pro
+ delete mode 100644 examples/plugins/cxx/helloworld/helloworld.pro
+ delete mode 100644 examples/plugins/cxx/override/override.pro
+ delete mode 100644 examples/plugins/plugins.pro
+ delete mode 100644 examples/plugins/qml/.gitignore
+ delete mode 100644 examples/plugins/qml/cyclekeys/cyclekeys.pro
+ delete mode 100644 examples/plugins/qml/helloworld/helloworld.pro
+ delete mode 100644 examples/plugins/qml/override/override.pro
+ delete mode 100644 examples/plugins/qml/qml.pro
+ delete mode 100644 input-context/input-context.pro
+ delete mode 100644 maliit-framework.pro
+ delete mode 100644 maliit-glib/libmaliit-glib.pri
+ delete mode 100644 maliit-glib/maliit-glib.pro
+ delete mode 100644 passthroughserver/devices.txt
+ delete mode 100644 passthroughserver/passthroughserver.pro
+ delete mode 100644 src/README
+ delete mode 100644 src/config.h.in
+ delete mode 100644 src/libmaliit-plugins.pri
+ delete mode 100644 src/src.pro
+ delete mode 100644 tests/.gitignore
+ delete mode 100644 tests/common_check.pri
+ delete mode 100644 tests/common_top.pri
+ delete mode 100644 tests/dummyimplugin/dummyimplugin.pro
+ delete mode 100644 tests/dummyimplugin2/dummyimplugin2.pro
+ delete mode 100644 tests/dummyimplugin3/dummyimplugin3.pro
+ delete mode 100644 tests/dummyimplugins.pri
+ delete mode 100644 tests/dummyplugin/dummyplugin.pro
+ delete mode 100644 tests/ft_exampleplugin/ft_exampleplugin.pro
+ delete mode 100644 tests/ft_mimpluginmanager/ft_mimpluginmanager.pro
+ delete mode 100644 tests/qtestlib2junitxml.xsl
+ delete mode 100644 tests/sanitychecks/sanitychecks.pro
+ delete mode 100644 tests/tests.pro
+ delete mode 100644 tests/ut_maliit_glib_settings/ut_maliit_glib_settings.pro
+ delete mode 100644 tests/ut_mattributeextensionmanager/ut_mattributeextensionmanager.pro
+ delete mode 100644 tests/ut_mimonscreenplugins/ut_mimonscreenplugins.pro
+ delete mode 100644 tests/ut_mimpluginmanager/ut_mimpluginmanager.pro
+ delete mode 100644 tests/ut_mimpluginmanagerconfig/ut_mimpluginmanagerconfig.pro
+ delete mode 100644 tests/ut_mimserveroptions/ut_mimserveroptions.pro
+ delete mode 100644 tests/ut_mimsettings/ut_mimsettings.pro
+ delete mode 100644 tests/ut_minputmethodquickplugin/ut_minputmethodquickplugin.pro
+ delete mode 100644 tests/ut_mkeyoverride/ut_mkeyoverride.pro
+ delete mode 100644 weston-protocols/.gitignore
+ delete mode 100644 weston-protocols/dummy.cpp
+ delete mode 100644 weston-protocols/libmaliit-weston-protocols.pri
+ delete mode 100644 weston-protocols/weston-protocols.pro
+
+diff --git a/.gitignore b/.gitignore
+index 75902e7..716fece 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -16,6 +16,6 @@ gen_*
+ *.gcov
+ *.gcda
+ *.gcno
+-/meego-im-framework.schemas
+ *.tar.*
+ *.md5
++.idea
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+new file mode 100644
+index 0000000..af333fd
+--- /dev/null
++++ b/CMakeLists.txt
+@@ -0,0 +1,478 @@
++cmake_minimum_required(VERSION 3.3)
++
++project(maliit-framework VERSION 0.99.1)
++
++# Build options
++
++option(enable-docs "Build documentation" ON)
++option(enable-tests "Build tests" ON)
++
++option(enable-glib "Build GLib support" ON)
++
++option(enable-xcb "Compile with xcb support" ON)
++option(enable-wayland "Compile with support for wayland" OFF)
++option(enable-qt5-inputcontext "Compile with Qt5 input context" ON)
++
++option(enable-hwkeyboard "Enable support for the hardware keyboard" ON)
++option(enable-dbus-activation "Enable dbus activation support for maliit-server" OFF)
++
++# Install paths
++
++if(NOT DEFINED INCLUDE_INSTALL_DIR)
++    set(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include" CACHE PATH
++        "Installation directory for C/C++ header files [CMAKE_INSTALL_PREFIX/include]")
++endif()
++
++if(NOT DEFINED LIB_INSTALL_DIR)
++    set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib" CACHE PATH
++        "Installation directory for object code libraries [CMAKE_INSTALL_PREFIX/lib]")
++endif()
++
++if(NOT DEFINED SHARE_INSTALL_PREFIX)
++    set(SHARE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/share" CACHE PATH
++        "Installation directory for read-only architecture-independent data [CMAKE_INSTALL_PREFIX/share]")
++endif()
++
++if(NOT DEFINED QT5_PLUGINS_INSTALL_DIR)
++    set(QT5_PLUGINS_INSTALL_DIR "${LIB_INSTALL_DIR}/qt5/plugins" CACHE PATH
++            "Installation directory for Qt 5 plugins [LIB_INSTALL_DIR/qt5/plugins]")
++endif()
++
++if(NOT DEFINED QT5_MKSPECS_INSTALL_DIR)
++    set(QT5_MKSPECS_INSTALL_DIR "${LIB_INSTALL_DIR}/qt5/mkspecs" CACHE PATH
++            "Installation directory for Qt 5 mkspecs files [LIB_INSTALL_DIR/qt5/mkspecs]")
++endif()
++
++list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
++
++set(CMAKE_INCLUDE_CURRENT_DIR ON)
++set(CMAKE_AUTOMOC ON)
++
++find_package(PkgConfig REQUIRED)
++
++find_package(Qt5Core)
++find_package(Qt5DBus)
++find_package(Qt5Gui REQUIRED PRIVATE)
++find_package(Qt5Quick)
++find_package(Qt5Widgets)
++
++include_directories(common connection src)
++
++add_library(maliit-common STATIC
++            common/maliit/namespace.h
++            common/maliit/namespaceinternal.h
++            common/maliit/settingdata.cpp
++            common/maliit/settingdata.h)
++target_link_libraries(maliit-common Qt5::Core)
++
++set(CONNECTION_SOURCES
++    connection/connectionfactory.cpp
++    connection/connectionfactory.h
++    connection/dbuscustomarguments.cpp
++    connection/dbuscustomarguments.h
++    connection/dbusinputcontextconnection.cpp
++    connection/dbusinputcontextconnection.h
++    connection/dbusserverconnection.cpp
++    connection/dbusserverconnection.h
++    connection/inputcontextdbusaddress.cpp
++    connection/inputcontextdbusaddress.h
++    connection/mimserverconnection.cpp
++    connection/mimserverconnection.h
++    connection/minputcontextconnection.cpp
++    connection/minputcontextconnection.h
++    connection/serverdbusaddress.cpp
++    connection/serverdbusaddress.h)
++
++if(enable-wayland)
++    list(CONNECTION_SOURCES APPEND
++         connection/waylandinputmethodconnection.cpp
++         connection/waylandinputmethodconnection.h)
++endif()
++
++set_source_files_properties(dbus_interfaces/minputmethodcontext1interface.xml dbus_interfaces/minputmethodserver1interface.xml
++                            PROPERTIES INCLUDE maliit/settingdata.h)
++
++qt5_add_dbus_adaptor(CONNECTION_SOURCES dbus_interfaces/minputmethodcontext1interface.xml dbusserverconnection.h DBusServerConnection)
++qt5_add_dbus_adaptor(CONNECTION_SOURCES dbus_interfaces/minputmethodserver1interface.xml dbusinputcontextconnection.h DBusInputContextConnection)
++
++qt5_add_dbus_interface(CONNECTION_SOURCES dbus_interfaces/minputmethodcontext1interface.xml minputmethodcontext1interface_interface)
++qt5_add_dbus_interface(CONNECTION_SOURCES dbus_interfaces/minputmethodserver1interface.xml minputmethodserver1interface_interface)
++
++add_library(maliit-connection STATIC ${CONNECTION_SOURCES})
++target_link_libraries(maliit-connection Qt5::Core Qt5::DBus Qt5::Gui)
++
++include_directories(${Qt5Gui_PRIVATE_INCLUDE_DIRS})
++
++set(PLUGINS_SOURCES
++    src/maliit/plugins/abstractinputmethod.cpp
++    src/maliit/plugins/abstractinputmethod.h
++    src/maliit/plugins/abstractinputmethodhost.cpp
++    src/maliit/plugins/abstractinputmethodhost.h
++    src/maliit/plugins/abstractpluginsetting.h
++    src/maliit/plugins/attributeextension.cpp
++    src/maliit/plugins/attributeextension.h
++    src/maliit/plugins/attributeextension_p.h
++    src/maliit/plugins/extensionevent.cpp
++    src/maliit/plugins/extensionevent.h
++    src/maliit/plugins/extensionevent_p.h
++    src/maliit/plugins/inputmethodplugin.h
++    src/maliit/plugins/keyoverride.cpp
++    src/maliit/plugins/keyoverride.h
++    src/maliit/plugins/keyoverride_p.h
++    src/maliit/plugins/keyoverridedata.cpp
++    src/maliit/plugins/keyoverridedata.h
++    src/maliit/plugins/plugindescription.cpp
++    src/maliit/plugins/plugindescription.h
++    src/maliit/plugins/subviewdescription.cpp
++    src/maliit/plugins/subviewdescription.h
++    src/maliit/plugins/updateevent.cpp
++    src/maliit/plugins/updateevent.h
++    src/maliit/plugins/updateevent_p.h
++    src/maliit/plugins/updatereceiver.cpp
++    src/maliit/plugins/updatereceiver.h
++    src/quick/inputmethodquick.cpp
++    src/quick/inputmethodquick.h
++    src/quick/inputmethodquickplugin.cpp
++    src/quick/inputmethodquickplugin.h
++    src/quick/keyoverridequick.cpp
++    src/quick/keyoverridequick.h
++    src/quick/keyoverridequick_p.h
++    src/quick/maliitquick.h
++    src/abstractplatform.cpp
++    src/abstractplatform.h
++    src/mattributeextensionid.cpp
++    src/mattributeextensionid.h
++    src/mattributeextensionmanager.cpp
++    src/mattributeextensionmanager.h
++    src/mimhwkeyboardtracker.h
++    src/mimonscreenplugins.cpp
++    src/mimonscreenplugins.h
++    src/mimpluginmanager.cpp
++    src/mimpluginmanager.h
++    src/mimpluginmanager_p.h
++    src/mimserver.cpp
++    src/mimserver.h
++    src/mimserveroptions.cpp
++    src/mimserveroptions.h
++    src/mimsettings.cpp
++    src/mimsettings.h
++    src/mimsettingsqsettings.cpp
++    src/mimsettingsqsettings.h
++    src/mimsubviewoverride.cpp
++    src/mimsubviewoverride.h
++    src/minputmethodhost.cpp
++    src/minputmethodhost.h
++    src/msharedattributeextensionmanager.cpp
++    src/msharedattributeextensionmanager.h
++    src/unknownplatform.cpp
++    src/unknownplatform.h
++    src/windowdata.cpp
++    src/windowdata.h
++    src/windowgroup.cpp
++    src/windowgroup.h)
++
++if(enable-xcb)
++    list(APPEND PLUGINS_SOURCES
++         src/xcbplatform.cpp
++         src/xcbplatform.h)
++    find_package(XCB REQUIRED xfixes)
++    list(APPEND PLUGINS_INCLUDE_DIRS ${XCB_INCLUDE_DIRS})
++    list(APPEND PLUGINS_LIBRARIES ${XCB_LIBRARIES})
++endif()
++
++if(enable-wayland)
++    list(APPEND PLUGINS_SOURCES
++         src/waylandplatform.cpp
++         src/waylandplatform.h)
++endif()
++
++if(enable-hwkeyboard)
++    list(APPEND PLUGINS_SOURCES
++         src/mimhwkeyboardtracker.cpp
++         src/mimhwkeyboardtracker_p.h)
++    find_package(udev REQUIRED)
++    list(APPEND PLUGINS_INCLUDE_DIRS ${UDEV_INCLUDE_DIRS})
++    list(APPEND PLUGINS_LIBRARIES ${UDEV_LIBRARIES})
++else()
++    list(APPEND PLUGINS_SOURCES src/mimhwkeyboardtracker_stub.cpp)
++endif()
++
++add_library(maliit-plugins SHARED ${PLUGINS_SOURCES} ${PLUGINS_HEADER})
++target_link_libraries(maliit-plugins maliit-connection maliit-common Qt5::Core Qt5::Gui Qt5::Quick ${PLUGINS_LIBRARIES})
++target_include_directories(maliit-plugins PRIVATE ${PLUGINS_INCLUDE_DIRS})
++
++set_target_properties(maliit-plugins PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR}
++                                                  VERSION ${PROJECT_VERSION})
++
++if(enable-glib)
++    find_package(GLib2)
++    find_package(GIO)
++
++    set(GLIB_SOURCES
++        maliit-glib/maliitattributeextension.c
++        maliit-glib/maliitattributeextension.h
++        maliit-glib/maliitattributeextensionprivate.h
++        maliit-glib/maliitattributeextensionregistry.c
++        maliit-glib/maliitattributeextensionregistry.h
++        maliit-glib/maliitbus.c
++        maliit-glib/maliitbus.h
++        maliit-glib/maliitbusprivate.h
++        maliit-glib/maliitinputmethod.c
++        maliit-glib/maliitinputmethod.h
++        maliit-glib/maliitpluginsettings.c
++        maliit-glib/maliitpluginsettings.h
++        maliit-glib/maliitpluginsettingsprivate.h
++        maliit-glib/maliitsettingdata.c
++        maliit-glib/maliitsettingdata.h
++        maliit-glib/maliitsettingsentry.c
++        maliit-glib/maliitsettingsentry.h
++        maliit-glib/maliitsettingsentryprivate.h
++        maliit-glib/maliitsettingsmanager.c
++        maliit-glib/maliitsettingsmanager.h)
++
++    set_source_files_properties(maliit-glib/maliitmarshallers.list
++            PROPERTIES PREFIX maliit_marshal)
++    glib2_add_marshal(GLIB_SOURCES maliit-glib/maliitmarshallers.list)
++
++    set_source_files_properties(dbus_interfaces/minputmethodcontext1interface.xml PROPERTIES
++            INTERFACE_PREFIX com.meego
++            NAMESPACE Maliit
++            OUTPUT_NAME maliit-glib/maliitcontext)
++    set_property(SOURCE dbus_interfaces/minputmethodcontext1interface.xml PROPERTY
++            ANNOTATE com.meego.inputmethod.inputcontext1 org.gtk.GDBus.C.Name Context)
++
++    gdbus_add_code(GLIB_SOURCES dbus_interfaces/minputmethodcontext1interface.xml)
++
++    set_source_files_properties(dbus_interfaces/minputmethodserver1interface.xml PROPERTIES
++            INTERFACE_PREFIX com.meego
++            NAMESPACE Maliit
++            OUTPUT_NAME maliit-glib/maliitserver)
++    set_property(SOURCE dbus_interfaces/minputmethodserver1interface.xml PROPERTY
++            ANNOTATE com.meego.inputmethod.uiserver1 org.gtk.GDBus.C.Name Server)
++    gdbus_add_code(GLIB_SOURCES dbus_interfaces/minputmethodserver1interface.xml)
++
++    add_library(maliit-glib SHARED ${GLIB_SOURCES} ${GLIB_HEADER})
++    target_link_libraries(maliit-glib GLib2::GLib GLib2::GIO)
++    set_target_properties(maliit-glib PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR}
++                                                   VERSION ${PROJECT_VERSION})
++endif()
++
++add_definitions(-DMALIIT_FRAMEWORK_USE_INTERNAL_API
++                -DMALIIT_PLUGINS_DATA_DIR="${SHARE_INSTALL_PREFIX}/maliit/plugins"
++                -DMALIIT_EXTENSIONS_DIR="${SHARE_INSTALL_PREFIX}/maliit-framework/extensions"
++                -DMALIIT_CONFIG_ROOT="/maliit/"
++                -DMALIIT_PLUGINS_DIR="${LIB_INSTALL_DIR}/maliit/plugins"
++                -DMALIIT_DEFAULT_HW_PLUGIN="libmaliit-keyboard-plugin.so"
++                -DMALIIT_ENABLE_MULTITOUCH=true
++                -DMALIIT_DEFAULT_PLUGIN="libmaliit-keyboard-plugin.so"
++                -DMALIIT_DEFAULT_SUBVIEW="")
++
++add_executable(maliit-server passthroughserver/main.cpp)
++target_link_libraries(maliit-server maliit-plugins)
++
++if(enable-qt5-inputcontext)
++    set(INPUT_CONTEXT_SOURCES
++            input-context/main.cpp
++            input-context/minputcontext.cpp
++            input-context/minputcontext.h)
++
++    add_library(maliitplatforminputcontextplugin MODULE ${INPUT_CONTEXT_SOURCES})
++    target_link_libraries(maliitplatforminputcontextplugin maliit-connection Qt5::Quick)
++endif()
++
++add_executable(maliit-exampleapp-plainqt
++        examples/apps/plainqt/mainwindow.cpp
++        examples/apps/plainqt/mainwindow.h
++        examples/apps/plainqt/plainqt.cpp)
++target_link_libraries(maliit-exampleapp-plainqt Qt5::Gui Qt5::Widgets)
++
++add_library(cxxhelloworldplugin MODULE
++        examples/plugins/cxx/helloworld/helloworldinputmethod.cpp
++        examples/plugins/cxx/helloworld/helloworldinputmethod.h
++        examples/plugins/cxx/helloworld/helloworldplugin.cpp
++        examples/plugins/cxx/helloworld/helloworldplugin.h)
++target_link_libraries(cxxhelloworldplugin maliit-plugins Qt5::Widgets)
++
++add_library(cxxoverrideplugin MODULE
++            examples/plugins/cxx/override/overrideinputmethod.cpp
++            examples/plugins/cxx/override/overrideinputmethod.h
++            examples/plugins/cxx/override/overrideplugin.cpp
++            examples/plugins/cxx/override/overrideplugin.h)
++target_link_libraries(cxxoverrideplugin maliit-plugins Qt5::Widgets)
++
++file(COPY examples/plugins/qml/helloworld/helloworld.qml
++     DESTINATION ${CMAKE_BINARY_DIR}/examples/plugins/qml/helloworld)
++
++# Documentation
++
++if(enable-docs)
++    find_package(Doxygen REQUIRED)
++
++    configure_file(doc/Doxyfile.in Doxyfile @ONLY)
++
++    add_custom_target(doc ALL
++                      ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
++                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
++                      COMMENT "Generating API documentation with Doxygen" VERBATIM)
++endif()
++
++# Installation
++
++configure_file(common/maliit-framework.pc.in maliit-framework.pc @ONLY)
++configure_file(src/maliit-plugins.pc.in maliit-plugins.pc @ONLY)
++configure_file(src/maliit-server.pc.in maliit-server.pc @ONLY)
++
++configure_file(common/maliit-framework.prf.in maliit-framework.prf @ONLY)
++configure_file(src/maliit-plugins.prf.in maliit-plugins.prf @ONLY)
++configure_file(src/maliit-defines.prf.in maliit-defines.prf @ONLY)
++
++install(TARGETS maliit-server maliit-plugins maliit-exampleapp-plainqt
++        RUNTIME DESTINATION bin
++        LIBRARY DESTINATION ${LIB_INSTALL_DIR})
++
++install(DIRECTORY common/ DESTINATION ${INCLUDE_INSTALL_DIR}/maliit/framework
++        FILES_MATCHING PATTERN "*.h"
++        PATTERN "*internal.h" EXCLUDE)
++install(DIRECTORY src/maliit DESTINATION ${INCLUDE_INSTALL_DIR}/maliit/plugins
++        FILES_MATCHING PATTERN "*.h"
++        PATTERN "*_p.h" EXCLUDE)
++install(FILES src/mimserver.h DESTINATION ${INCLUDE_INSTALL_DIR}/maliit/server)
++
++install(FILES ${CMAKE_BINARY_DIR}/maliit-framework.pc ${CMAKE_BINARY_DIR}/maliit-plugins.pc ${CMAKE_BINARY_DIR}/maliit-server.pc
++        DESTINATION ${LIB_INSTALL_DIR}/pkgconfig)
++install(FILES ${CMAKE_BINARY_DIR}/maliit-framework.prf ${CMAKE_BINARY_DIR}/maliit-plugins.prf ${CMAKE_BINARY_DIR}/maliit-defines.prf
++        DESTINATION ${QT5_MKSPECS_INSTALL_DIR}/features)
++
++install(FILES INSTALL.local LICENSE.LGPL NEWS README
++        DESTINATION ${SHARE_INSTALL_PREFIX}/doc/maliit-framework)
++
++if(enable-glib)
++    configure_file(maliit-glib/maliit-glib.pc.in maliit-glib.pc @ONLY)
++
++    install(TARGETS maliit-glib LIBRARY DESTINATION ${LIB_INSTALL_DIR})
++
++    install(DIRECTORY maliit-glib DESTINATION ${INCLUDE_INSTALL_DIR}/maliit
++            FILES_MATCHING PATTERN "*.h"
++            PATTERN "*private.h" EXCLUDE)
++    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/maliit-glib DESTINATION ${INCLUDE_INSTALL_DIR}/maliit
++            FILES_MATCHING PATTERN "*.h")
++
++    install(FILES ${CMAKE_BINARY_DIR}/maliit-glib.pc DESTINATION ${LIB_INSTALL_DIR}/pkgconfig)
++endif()
++
++if(enable-qt5-inputcontext)
++    install(TARGETS maliitplatforminputcontextplugin LIBRARY DESTINATION ${QT5_PLUGINS_INSTALL_DIR}/platforminputcontext)
++endif()
++
++if(enable-dbus-activation)
++    configure_file(connection/org.maliit.server.service.in org.maliit.server.service @ONLY)
++
++    install(FILES ${CMAKE_BINARY_DIR}/org.maliit.server.service DESTINATION ${SHARE_INSTALL_PREFIX}/dbus-1/services)
++endif()
++
++if(enable-docs)
++    install(DIRECTORY ${CMAKE_BINARY_DIR}/doc/html/
++            DESTINATION ${SHARE_INSTALL_PREFIX}/doc/maliit-framework-doc)
++endif()
++
++# Tests
++
++if(enable-tests)
++    enable_testing()
++
++    find_package(Qt5Test)
++
++    set(TEST_PLUGINS_DIR ${CMAKE_BINARY_DIR}/tests/plugins)
++
++    add_library(dummyimplugin SHARED
++            tests/dummyimplugin/dummyimplugin.cpp
++            tests/dummyimplugin/dummyimplugin.h
++            tests/dummyimplugin/dummyinputmethod.cpp
++            tests/dummyimplugin/dummyinputmethod.h)
++    target_link_libraries(dummyimplugin maliit-plugins)
++    target_include_directories(dummyimplugin INTERFACE tests/dummyimplugin)
++
++    add_library(dummyimplugin2 SHARED
++            tests/dummyimplugin2/dummyimplugin2.cpp
++            tests/dummyimplugin2/dummyimplugin2.h)
++    target_link_libraries(dummyimplugin2 maliit-plugins)
++    target_include_directories(dummyimplugin2 INTERFACE tests/dummyimplugin2)
++
++    add_library(dummyimplugin3 SHARED
++            tests/dummyimplugin3/dummyimplugin3.cpp
++            tests/dummyimplugin3/dummyimplugin3.h
++            tests/dummyimplugin3/dummyinputmethod3.cpp
++            tests/dummyimplugin3/dummyinputmethod3.h)
++    target_link_libraries(dummyimplugin3 maliit-plugins)
++    target_include_directories(dummyimplugin3 INTERFACE tests/dummyimplugin3)
++
++    add_library(dummyplugin SHARED
++            tests/dummyplugin/dummyplugin.cpp
++            tests/dummyplugin/dummyplugin.h)
++    target_link_libraries(dummyplugin maliit-plugins)
++    target_include_directories(dummyplugin INTERFACE tests/dummyplugin)
++
++    set(DUMMY_PLUGINS dummyimplugin dummyimplugin2 dummyimplugin3 dummyplugin)
++
++    set_property(TARGET ${DUMMY_PLUGINS} PROPERTY LIBRARY_OUTPUT_DIRECTORY ${TEST_PLUGINS_DIR})
++
++    add_library(test-utils STATIC
++            tests/utils/core-utils.cpp
++            tests/utils/core-utils.h
++            tests/utils/gui-utils.cpp
++            tests/utils/gui-utils.h)
++    target_link_libraries(test-utils PUBLIC Qt5::Core Qt5::Gui Qt5::Test)
++    target_include_directories(test-utils INTERFACE tests/utils)
++    target_compile_definitions(test-utils PUBLIC
++            -DMALIIT_TEST_PLUGINS_DIR="${CMAKE_INSTALL_PREFIX}/lib/maliit-framework-tests/plugins"
++            -DMALIIT_TEST_DATA_PATH="${CMAKE_INSTALL_PREFIX}/lib/maliit-framework-tests"
++            -DIN_TREE_TEST_PLUGIN_DIR="${CMAKE_BINARY_DIR}/examples/plugins")
++
++    add_library(test-stubs STATIC
++            tests/stubs/mkeyboardstatetracker_stub.h
++            tests/stubs/fakeproperty.cpp
++            tests/stubs/fakeproperty.h)
++    target_link_libraries(test-stubs PUBLIC Qt5::Core)
++    target_include_directories(test-stubs INTERFACE tests/stubs)
++
++    function(create_test name)
++        add_executable(${name}
++                tests/${name}/${name}.cpp
++                tests/${name}/${name}.h)
++
++        set(_libs ${ARGV})
++        list(REMOVE_AT _libs 0)
++        target_link_libraries(${name} test-utils maliit-plugins ${_libs})
++
++        add_test(${name} ${name})
++
++        set(test_targets ${test_targets} ${name} PARENT_SCOPE)
++    endfunction()
++
++    create_test(sanitychecks)
++    create_test(ut_mattributeextensionmanager)
++    create_test(ut_mimonscreenplugins)
++    create_test(ut_mimpluginmanager ${DUMMY_PLUGINS})
++    create_test(ut_mimpluginmanagerconfig)
++    create_test(ut_mimserveroptions)
++    create_test(ut_mimsettings)
++    create_test(ut_minputmethodquickplugin)
++    create_test(ut_mkeyoverride)
++    create_test(ft_exampleplugin)
++    create_test(ft_mimpluginmanager test-stubs ${DUMMY_PLUGINS})
++
++    set_property(TEST ${test_targets} PROPERTY ENVIRONMENT
++            TESTING_IN_SANDBOX=1
++            TESTPLUGIN_PATH=${CMAKE_BINARY_DIR}/tests/plugins
++            TESTDATA_PATH=${CMAKE_SOURCE_DIR}/tests)
++
++    if(enable-glib)
++        add_executable(ut_maliit_glib_settings
++                tests/ut_maliit_glib_settings/ut_maliit_glib_settings.c
++                tests/ut_maliit_glib_settings/mockmaliitserver.c
++                tests/ut_maliit_glib_settings/mockmaliitserver.h)
++        target_link_libraries(ut_maliit_glib_settings GLib2::GLib GLib2::GIO maliit-glib)
++
++        add_test(ut_maliit_glib_settings ut_maliit_glib_settings)
++    endif()
++endif()
+\ No newline at end of file
+diff --git a/NEWS b/NEWS
+index b4af4c2..b5d7e8a 100644
+--- a/NEWS
++++ b/NEWS
+@@ -1,4 +1,10 @@
+-0.99.1
++0.99.2
++======
++
++CHANGES SINCE 0.99.1
++* Use cmake instad of qmake as the buildsystem.
++
++*0.99.1
+ ======
+ 
+ CHANGES SINCE 0.99.0
+diff --git a/VERSION b/VERSION
+deleted file mode 100644
+index 626c498..0000000
+--- a/VERSION
++++ /dev/null
+@@ -1 +0,0 @@
+-0.99.1
+diff --git a/cmake/FindGIO.cmake b/cmake/FindGIO.cmake
+new file mode 100644
+index 0000000..0ac74b3
+--- /dev/null
++++ b/cmake/FindGIO.cmake
+@@ -0,0 +1,65 @@
++find_package(PkgConfig)
++pkg_check_modules(PC_GIO gio-2.0 gio-unix-2.0 QUIET)
++
++set(GIO_INCLUDE_DIRS ${PC_GIO_INCLUDE_DIRS})
++
++foreach(COMP ${PC_GIO_LIBRARIES})
++    find_library(GIO_${COMP} NAMES ${COMP} HINTS ${PC_GIO_LIBRARY_DIRS})
++    list(APPEND GIO_LIBRARIES ${GIO_${COMP}})
++endforeach()
++
++execute_process(COMMAND ${PKG_CONFIG_EXECUTABLE} --variable gdbus_codegen gio-2.0
++        OUTPUT_VARIABLE GDBUS_CODEGEN_EXECUTABLE)
++
++string(REGEX REPLACE "[\r\n]" " " GDBUS_CODEGEN_EXECUTABLE "${GDBUS_CODEGEN_EXECUTABLE}")
++string(REGEX REPLACE " +$" "" GDBUS_CODEGEN_EXECUTABLE "${GDBUS_CODEGEN_EXECUTABLE}")
++
++# handle the QUIETLY and REQUIRED arguments and set GLIB2_FOUND to TRUE if
++# all listed variables are TRUE
++include(FindPackageHandleStandardArgs)
++find_package_handle_standard_args(GIO DEFAULT_MSG GIO_LIBRARIES GIO_INCLUDE_DIRS)
++
++mark_as_advanced(GIO_INCLUDE_DIRS GIO_LIBRARIES)
++
++if(PC_GIO_FOUND AND NOT TARGET GLib2::GIO)
++    add_library(GLib2::GIO INTERFACE IMPORTED)
++
++    set_property(TARGET GLib2::GIO PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${GIO_INCLUDE_DIRS})
++    set_property(TARGET GLib2::GIO PROPERTY INTERFACE_LINK_LIBRARIES ${GIO_LIBRARIES})
++endif()
++
++function(GDBUS_ADD_CODE _sources _interface)
++    get_filename_component(_infile ${_interface} ABSOLUTE)
++    get_filename_component(_basename ${_interface} NAME_WE)
++    set(_output "${CMAKE_CURRENT_BINARY_DIR}/${_basename}")
++
++    get_source_file_property(_interface_prefix ${_interface} INTERFACE_PREFIX)
++    if(_interface_prefix)
++        set(_params ${_params} --interface-prefix ${_interface_prefix})
++    endif()
++
++    get_source_file_property(_output_name ${_interface} OUTPUT_NAME)
++    if(_output_name)
++        set(_output "${CMAKE_CURRENT_BINARY_DIR}/${_output_name}")
++    endif()
++
++    get_source_file_property(_namespace ${_interface} NAMESPACE)
++    if(_namespace)
++        set(_params ${_params} --c-namespace ${_namespace})
++    endif()
++
++    get_source_file_property(_annotate ${_interface} ANNOTATE)
++    if(_annotate)
++        set(_params ${_params} --annotate ${_annotate})
++    endif()
++
++    get_filename_component(_output_directory ${_output} DIRECTORY)
++    file(MAKE_DIRECTORY ${_output_directory})
++
++    add_custom_command(OUTPUT "${_output}.c" "${_output}.h"
++            COMMAND ${GDBUS_CODEGEN_EXECUTABLE} ${_params} --generate-c-code ${_output} ${_infile}
++            DEPENDS ${_infile} VERBATIM)
++
++    list(APPEND ${_sources} "${_output}.c" "${_output}.h")
++    set(${_sources} ${${_sources}} PARENT_SCOPE)
++endfunction()
+diff --git a/cmake/FindGLib2.cmake b/cmake/FindGLib2.cmake
+new file mode 100644
+index 0000000..4d7bf18
+--- /dev/null
++++ b/cmake/FindGLib2.cmake
+@@ -0,0 +1,56 @@
++include(FeatureSummary)
++set_package_properties(GLIB2 PROPERTIES
++        URL "https://wiki.gnome.org/Projects/GLib"
++        DESCRIPTION "GLib provides the core application building blocks for libraries and applications written in C")
++
++find_package(PkgConfig)
++pkg_check_modules(PC_GLIB2 glib-2.0 QUIET)
++
++set(GLIB2_INCLUDE_DIRS ${PC_GLIB2_INCLUDE_DIRS})
++
++foreach(COMP ${PC_GLIB2_LIBRARIES})
++    find_library(GLIB2_${COMP} NAMES ${COMP} HINTS ${PC_GLIB2_LIBRARY_DIRS})
++    list(APPEND GLIB2_LIBRARIES ${GLIB2_${COMP}})
++endforeach()
++
++execute_process(COMMAND ${PKG_CONFIG_EXECUTABLE} --variable glib_genmarshal glib-2.0
++        OUTPUT_VARIABLE GLIB2_GENMARHSAL_EXECUTABLE)
++
++string(REGEX REPLACE "[\r\n]" " " GLIB2_GENMARHSAL_EXECUTABLE "${GLIB2_GENMARHSAL_EXECUTABLE}")
++string(REGEX REPLACE " +$" "" GLIB2_GENMARHSAL_EXECUTABLE "${GLIB2_GENMARHSAL_EXECUTABLE}")
++
++# handle the QUIETLY and REQUIRED arguments and set GLIB2_FOUND to TRUE if
++# all listed variables are TRUE
++include(FindPackageHandleStandardArgs)
++find_package_handle_standard_args(GLIB2 DEFAULT_MSG GLIB2_LIBRARIES GLIB2_INCLUDE_DIRS)
++
++mark_as_advanced(GLIB2_INCLUDE_DIRS GLIB2_LIBRARIES)
++
++if(PC_GLIB2_FOUND AND NOT TARGET GLib2::GLib)
++    add_library(GLib2::GLib INTERFACE IMPORTED)
++
++    set_property(TARGET GLib2::GLib PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${GLIB2_INCLUDE_DIRS})
++    set_property(TARGET GLib2::GLib PROPERTY INTERFACE_LINK_LIBRARIES ${GLIB2_LIBRARIES})
++endif()
++
++function(GLIB2_ADD_MARSHAL _sources _marshallist)
++    get_filename_component(_infile ${_marshallist} ABSOLUTE)
++    get_filename_component(_basename ${_marshallist} NAME_WE)
++    set(_header "${CMAKE_CURRENT_BINARY_DIR}/${_basename}.h")
++    set(_body   "${CMAKE_CURRENT_BINARY_DIR}/${_basename}.c")
++
++    get_source_file_property(_prefix ${_marshallist} PREFIX)
++    if(_prefix)
++        set(_params ${_params} --prefix ${_prefix})
++    endif()
++
++    add_custom_command(OUTPUT "${_header}"
++            COMMAND ${GLIB2_GENMARHSAL_EXECUTABLE} --header ${_params} ${_infile} > ${_header}
++            DEPENDS ${_infile} VERBATIM)
++    add_custom_command(OUTPUT "${_body}"
++            COMMAND ${GLIB2_GENMARHSAL_EXECUTABLE} --body ${_params} ${_infile} > ${_body}
++            DEPENDS ${_infile} VERBATIM)
++
++    list(APPEND ${_sources} "${_body}" "${_header}")
++    set(${_sources} ${${_sources}} PARENT_SCOPE)
++endfunction()
+diff --git a/cmake/FindXCB.cmake b/cmake/FindXCB.cmake
+new file mode 100644
+index 0000000..dc592aa
+--- /dev/null
++++ b/cmake/FindXCB.cmake
+@@ -0,0 +1,53 @@
++#.rst:
++# FindXCB
++# -------
++#
++# Find XCB libraries
++#
++# Tries to find xcb libraries on unix systems.
++#
++# - Be sure to set the COMPONENTS to the components you want to link to
++# - The XCB_LIBRARIES variable is set ONLY to your COMPONENTS list
++# - To use only a specific component check the XCB_LIBRARIES_${COMPONENT} variable
++#
++# The following values are defined
++#
++# ::
++#
++#   XCB_FOUND         - True if xcb is available
++#   XCB_INCLUDE_DIRS  - Include directories for xcb
++#   XCB_LIBRARIES     - List of libraries for xcb
++#   XCB_DEFINITIONS   - List of definitions for xcb
++#
++#=============================================================================
++# Copyright (c) 2015 Jari Vetoniemi
++#
++# Distributed under the OSI-approved BSD License (the "License");
++#
++# This software is distributed WITHOUT ANY WARRANTY; without even the
++# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
++# See the License for more information.
++#=============================================================================
++
++include(FeatureSummary)
++set_package_properties(XCB PROPERTIES
++   URL "http://xcb.freedesktop.org/"
++   DESCRIPTION "X protocol C-language Binding")
++
++find_package(PkgConfig)
++pkg_check_modules(PC_XCB QUIET xcb ${XCB_FIND_COMPONENTS})
++
++find_library(XCB_LIBRARIES xcb HINTS ${PC_XCB_LIBRARY_DIRS})
++find_path(XCB_INCLUDE_DIRS xcb/xcb.h PATH_SUFFIXES xcb HINTS ${PC_XCB_INCLUDE_DIRS})
++
++foreach(COMPONENT ${XCB_FIND_COMPONENTS})
++	find_library(XCB_LIBRARIES_${COMPONENT} xcb-${COMPONENT} HINTS ${PC_XCB_LIBRARY_DIRS})
++	list(APPEND XCB_LIBRARIES ${XCB_LIBRARIES_${COMPONENT}})
++	mark_as_advanced(XCB_LIBRARIES_${COMPONENT})
++endforeach(COMPONENT ${XCB_FIND_COMPONENTS})
++
++set(XCB_DEFINITIONS ${PC_XCB_CFLAGS_OTHER})
++
++include(FindPackageHandleStandardArgs)
++find_package_handle_standard_args(XCB DEFAULT_MSG XCB_LIBRARIES XCB_INCLUDE_DIRS)
++mark_as_advanced(XCB_INCLUDE_DIRS XCB_LIBRARIES XCB_DEFINITIONS)
+diff --git a/cmake/Findudev.cmake b/cmake/Findudev.cmake
+new file mode 100644
+index 0000000..ce454d5
+--- /dev/null
++++ b/cmake/Findudev.cmake
+@@ -0,0 +1,77 @@
++# - try to find the udev library
++#
++# Cache Variables: (probably not for direct use in your scripts)
++#  UDEV_INCLUDE_DIR
++#  UDEV_SOURCE_DIR
++#  UDEV_LIBRARY
++#
++# Non-cache variables you might use in your CMakeLists.txt:
++#  UDEV_FOUND
++#  UDEV_INCLUDE_DIRS
++#  UDEV_LIBRARIES
++#
++# Requires these CMake modules:
++#  FindPackageHandleStandardArgs (known included with CMake >=2.6.2)
++#
++# Original Author:
++# 2014 Kevin M. Godby <kevin@godby.org>
++#
++# Distributed under the Boost Software License, Version 1.0.
++# (See accompanying file LICENSE_1_0.txt or copy at
++# http://www.boost.org/LICENSE_1_0.txt)
++
++set(UDEV_ROOT_DIR
++    "${UDEV_ROOT_DIR}"
++	CACHE
++	PATH
++    "Directory to search for udev")
++
++find_package(PkgConfig QUIET)
++if(PKG_CONFIG_FOUND)
++	pkg_check_modules(PC_LIBUDEV libudev)
++endif()
++
++find_library(UDEV_LIBRARY
++	NAMES
++	udev
++	PATHS
++	${PC_LIBUDEV_LIBRARY_DIRS}
++	${PC_LIBUDEV_LIBDIR}
++	HINTS
++	"${UDEV_ROOT_DIR}"
++	PATH_SUFFIXES
++	lib
++	)
++
++get_filename_component(_libdir "${UDEV_LIBRARY}" PATH)
++
++find_path(UDEV_INCLUDE_DIR
++	NAMES
++	libudev.h
++	PATHS
++	${PC_LIBUDEV_INCLUDE_DIRS}
++	${PC_LIBUDEV_INCLUDEDIR}
++	HINTS
++	"${_libdir}"
++	"${_libdir}/.."
++	"${UDEV_ROOT_DIR}"
++	PATH_SUFFIXES
++	include
++	)
++
++include(FindPackageHandleStandardArgs)
++find_package_handle_standard_args(UDEV
++	DEFAULT_MSG
++	UDEV_LIBRARY
++	UDEV_INCLUDE_DIR
++	)
++
++if(UDEV_FOUND)
++	list(APPEND UDEV_LIBRARIES ${UDEV_LIBRARY})
++	list(APPEND UDEV_INCLUDE_DIRS ${UDEV_INCLUDE_DIR})
++	mark_as_advanced(UDEV_ROOT_DIR)
++endif()
++
++mark_as_advanced(UDEV_INCLUDE_DIR
++	UDEV_LIBRARY)
++
+diff --git a/common/common.pro b/common/common.pro
+deleted file mode 100644
+index 96e35a0..0000000
+--- a/common/common.pro
++++ /dev/null
+@@ -1,43 +0,0 @@
+-include(../config.pri)
+-
+-TOP_DIR = ..
+-
+-TEMPLATE = lib
+-TARGET = $$TOP_DIR/lib/maliit-common
+-
+-CONFIG += staticlib
+-
+-outputFiles(maliit-framework.pc)
+-outputFiles(maliit-framework.prf)
+-
+-OTHER_FILES += \
+-    maliit-framework.pc.in \
+-    maliit-framework.prf.in \
+-
+-FRAMEWORKHEADERSINSTALL = \
+-    maliit/namespace.h \
+-    maliit/settingdata.h \
+-
+-HEADERS += \
+-    $$FRAMEWORKHEADERSINSTALL \
+-    maliit/namespaceinternal.h \
+-
+-SOURCES += \
+-    maliit/settingdata.cpp \
+-
+-frameworkheaders.path += $$INCLUDEDIR/$$MALIIT_FRAMEWORK_HEADER/maliit
+-frameworkheaders.files += $$FRAMEWORKHEADERSINSTALL
+-
+-install_pkgconfig.path = $${LIBDIR}/pkgconfig
+-install_pkgconfig.files = $$OUT_PWD/maliit-framework.pc
+-
+-install_prf.path = $$MALIIT_INSTALL_PRF
+-install_prf.files = $$OUT_PWD/maliit-framework.prf
+-
+-INSTALLS += \
+-    frameworkheaders \
+-    install_pkgconfig \
+-    install_prf \
+-
+-OTHER_FILES += \
+-    libmaliit-common.pri
+diff --git a/common/libmaliit-common.pri b/common/libmaliit-common.pri
+deleted file mode 100644
+index 064f3f9..0000000
+--- a/common/libmaliit-common.pri
++++ /dev/null
+@@ -1,7 +0,0 @@
+-# Use when a .pro file requires libmaliit-common
+-# The .pro file must define TOP_DIR to be a relative path
+-# to the top-level source/build directory, and include config.pri
+-
+-INCLUDEPATH += $$TOP_DIR/common
+-LIBS += $$TOP_DIR/lib/$$maliitStaticLib(maliit-common)
+-POST_TARGETDEPS += $$TOP_DIR/lib/$$maliitStaticLib(maliit-common)
+diff --git a/common/maliit-framework.pc.in b/common/maliit-framework.pc.in
+index 2a70030..f52798b 100644
+--- a/common/maliit-framework.pc.in
++++ b/common/maliit-framework.pc.in
+@@ -1,9 +1,9 @@
+-prefix=@PREFIX@
+-exec_prefix=@PREFIX@
+-libdir=@LIBDIR@
+-includedir=@INCLUDEDIR@
++prefix=@CMAKE_INSTALL_PREFIX@
++exec_prefix=@CMAKE_INSTALL_PREFIX@
++libdir=@LIB_INSTALL_DIR@
++includedir=@INCLUDE_INSTALL_DIR@
+ 
+ Name: Maliit Framework
+ Description: Maliit provides a flexible and cross platform input method framework. It is usable on all MeeGo user experiences, and in other GNU/Linux distributions as well.
+-Version: @MALIIT_VERSION@
+-Cflags: -I${includedir}/@MALIIT_FRAMEWORK_HEADER@
++Version: @PROJECT_VERSION@
++Cflags: -I${includedir}/maliit/framework
+diff --git a/common/maliit-framework.prf.in b/common/maliit-framework.prf.in
+index 5963226..bf7afdf 100644
+--- a/common/maliit-framework.prf.in
++++ b/common/maliit-framework.prf.in
+@@ -1,2 +1,2 @@
+ DEFINES *= @MALIIT_FRAMEWORK_FEATURE@
+-INCLUDEPATH *= @INCLUDEDIR@/@MALIIT_FRAMEWORK_HEADER@
++INCLUDEPATH *= @INCLUDE_INSTALL_DIR@/maliit/framework
+diff --git a/config.pri b/config.pri
+deleted file mode 100644
+index 8f24864..0000000
+--- a/config.pri
++++ /dev/null
+@@ -1,226 +0,0 @@
+-MALIIT_VERSION = $$system(cat $$PWD/VERSION)
+-
+-MALIIT_ABI_VERSION = $$MALIIT_VERSION
+-
+-# For libmaliit
+-MALIIT_LIB = maliit
+-MALIIT_SETTINGS_LIB = maliit-settings
+-MALIIT_HEADER = maliit
+-MALIIT_FRAMEWORK_HEADER = maliit/framework
+-# For libmaliit-glib
+-MALIIT_GLIB_LIB = maliit-glib
+-
+-include(defines.pri)
+-
+-# Linker optimization for release build
+-QMAKE_LFLAGS_RELEASE+=-Wl,--as-needed
+-# Compiler warnings are error if the build type is debug
+-QMAKE_CXXFLAGS_DEBUG+=-Werror -O0
+-QMAKE_CFLAGS_DEBUG+=-Werror -O0
+-
+-OBJECTS_DIR = .obj
+-MOC_DIR = .moc
+-
+-isEmpty(MALIIT_VERSION) {
+-    MALIIT_VERSION=$$MALIIT_VERSION
+-}
+-
+-isEmpty(PREFIX) {
+-    PREFIX = /usr
+-}
+-isEmpty(BINDIR) {
+-    BINDIR = $$PREFIX/bin
+-}
+-isEmpty(LIBDIR) {
+-    LIBDIR = $$PREFIX/lib
+-}
+-isEmpty(INCLUDEDIR) {
+-    INCLUDEDIR = $$PREFIX/include
+-}
+-DATADIR = $$PREFIX/share
+-
+-isEmpty(DOCDIR) {
+-    DOCDIR = $$DATADIR/doc
+-}
+-
+-isEmpty(MALIIT_PLUGINS_DIR) {
+-    MALIIT_PLUGINS_DIR = $$LIBDIR/$$MALIIT_PLUGINS
+-}
+-DEFINES += MALIIT_PLUGINS_DIR=\\\"$$MALIIT_PLUGINS_DIR\\\"
+-
+-isEmpty(MALIIT_PLUGINS_DATA_DIR) {
+-    MALIIT_PLUGINS_DATA_DIR = $$DATADIR/$$MALIIT_PLUGINS_DATA
+-}
+-DEFINES += MALIIT_PLUGINS_DATA_DIR=\\\"$$MALIIT_PLUGINS_DATA_DIR\\\"
+-
+-isEmpty(MALIIT_FACTORY_PLUGINS_DIR) {
+-    MALIIT_FACTORY_PLUGINS_DIR = $$MALIIT_PLUGINS_DIR/factories
+-}
+-DEFINES += MALIIT_FACTORY_PLUGINS_DIR=\\\"$$MALIIT_FACTORY_PLUGINS_DIR\\\"
+-
+-isEmpty(MALIIT_ENABLE_MULTITOUCH) {
+-
+-    MALIIT_ENABLE_MULTITOUCH=true
+-}
+-
+-MALIIT_EXTENSIONS_DIR = $$DATADIR/$$MALIIT_ATTRIBUTE_EXTENSIONS/
+-DEFINES += MALIIT_EXTENSIONS_DIR=\\\"$$MALIIT_EXTENSIONS_DIR\\\"
+-
+-isEmpty(MALIIT_DEFAULT_HW_PLUGIN) {
+-    MALIIT_DEFAULT_HW_PLUGIN = libmaliit-keyboard-plugin.so
+-}
+-
+-isEmpty(MALIIT_DEFAULT_PLUGIN) {
+-    MALIIT_DEFAULT_PLUGIN = libmaliit-keyboard-plugin.so
+-}
+-
+-MALIIT_TEST_DATADIR = $$DATADIR/$$MALIIT_TEST_SUITE
+-MALIIT_TEST_LIBDIR = $$LIBDIR/$$MALIIT_TEST_SUITE
+-MALIIT_TEST_TMPDIR = /tmp/$$MALIIT_TEST_SUITE
+-MALIIT_TEST_PLUGINS_DIR = $$MALIIT_TEST_LIBDIR/plugins
+-
+-DEFINES += MALIIT_TEST_PLUGINS_DIR=\\\"$$MALIIT_TEST_PLUGINS_DIR\\\"
+-
+-DEFINES += MALIIT_CONFIG_ROOT=\\\"$$MALIIT_CONFIG_ROOT\\\"
+-
+-DEFINES += MALIIT_FRAMEWORK_USE_INTERNAL_API
+-
+-# Do not define keywords signals, slots, emit and foreach because of
+-# conflicts with 3rd party libraries.
+-CONFIG += no_keywords
+-
+-unix {
+-    MALIIT_STATIC_PREFIX=lib
+-    MALIIT_STATIC_SUFFIX=.a
+-    MALIIT_DYNAMIC_PREFIX=lib
+-    MALIIT_DYNAMIC_SUFFIX=.so
+-    MALIIT_ABI_VERSION_MAJOR=
+-}
+-
+-win32 {
+-    # qmake puts libraries in subfolders in build tree on Windows (installation is unaffected)
+-    release {
+-        MALIIT_STATIC_PREFIX=release/lib
+-        MALIIT_DYNAMIC_PREFIX=release/
+-    }
+-    debug {
+-        MALIIT_STATIC_PREFIX=debug/lib
+-        MALIIT_DYNAMIC_PREFIX=debug/
+-    }
+-
+-    # one would suspect this to be .lib, but qmake with mingw uses .a
+-    MALIIT_STATIC_SUFFIX=.a
+-
+-    # qmake adds the first component of the version as part of the DLL name on Windows
+-    MALIIT_ABI_VERSIONS=$$split(MALIIT_ABI_VERSION, ".")
+-    MALIIT_ABI_VERSION_MAJOR=$$member(MALIIT_ABI_VERSIONS, 0)
+-    MALIIT_DYNAMIC_SUFFIX=$${MALIIT_ABI_VERSION_MAJOR}.dll
+-}
+-
+-defineReplace(maliitStaticLib) {
+-    return($${MALIIT_STATIC_PREFIX}$${1}$${MALIIT_STATIC_SUFFIX})
+-}
+-
+-defineReplace(maliitDynamicLib) {
+-    return($${MALIIT_DYNAMIC_PREFIX}$${1}$${MALIIT_DYNAMIC_SUFFIX})
+-}
+-
+-mac {
+-    # Do mac stuff here
+-    M_BUILD_FEATURES = debug
+-    M_PROFILE_PARTS =
+-    INCLUDEPATH += include/
+-}
+-
+-contains(QT_CONFIG,embedded) {
+-    CONFIG += qws
+-}
+-
+-wayland {
+-    DEFINES += HAVE_WAYLAND
+-}
+-
+-noxcb {
+-    DEFINES += NOXCB
+-}
+-
+-MALIIT_INSTALL_PRF = $$[QT_INSTALL_DATA]/mkspecs/features
+-local-install {
+-    MALIIT_INSTALL_PRF = $$replace(MALIIT_INSTALL_PRF, $$[QT_INSTALL_PREFIX], $$PREFIX)
+-}
+-
+-defineTest(outputFile) {
+-    out = $$OUT_PWD/$$1
+-    in = $$PWD/$${1}.in
+-
+-    !exists($$in) {
+-        error($$in does not exist!)
+-        return(false)
+-    }
+-
+-    MALIIT_IN_DIR = $$PWD
+-    MALIIT_OUT_DIR = $$OUT_PWD
+-
+-    variables = MALIIT_FRAMEWORK_FEATURE \
+-                PREFIX \
+-                BINDIR \
+-                INCLUDEDIR \
+-                LIBDIR \
+-                DOCDIR \
+-                MALIIT_PLUGINS_DIR \
+-                MALIIT_PLUGINS_DATA_DIR \
+-                MALIIT_FACTORY_PLUGINS_DIR \
+-                MALIIT_VERSION \
+-                MALIIT_ENABLE_MULTITOUCH \
+-                MALIIT_DEFAULT_HW_PLUGIN \
+-                MALIIT_DEFAULT_PLUGIN \
+-                MALIIT_QUICK_FEATURE \
+-                MALIIT_PLUGINS_LIB \
+-                MALIIT_PLUGINS_HEADER \
+-                MALIIT_LIB \
+-                MALIIT_HEADER \
+-                MALIIT_PLUGINS_QUICK_LIB \
+-                MALIIT_PLUGINS_QUICK_HEADER \
+-                MALIIT_PLUGINS_QUICK_FACTORY \
+-                MALIIT_SETTINGS_LIB \
+-                MALIIT_TEST_SUITE \
+-                MALIIT_TEST_DATADIR \
+-                MALIIT_TEST_LIBDIR \
+-                MALIIT_TEST_TMPDIR \
+-                MALIIT_IN_DIR \
+-                MALIIT_OUT_DIR \
+-                MALIIT_PACKAGENAME \
+-                MALIIT_PACKAGE_BRIEF \
+-                MALIIT_FRAMEWORK_HEADER \
+-                MALIIT_SERVER_ARGUMENTS \
+-                MALIIT_CONNECTION_LIB \
+-                MALIIT_SERVER_HEADER \
+-                MALIIT_ABI_VERSION_MAJOR \
+-                MALIIT_GLIB_LIB \
+-
+-    command = "sed"
+-    for(var, variables) {
+-       command += "-e \"s;@$$var@;$$eval($$var);g\""
+-    }
+-    command += $$in > $$out
+-
+-    system(mkdir -p $$dirname(out))
+-    system($$command)
+-    system(chmod --reference=$$in $$out)
+-
+-    QMAKE_DISTCLEAN += $$1
+-
+-    export(QMAKE_DISTCLEAN)
+-
+-    return(true)
+-}
+-
+-defineTest(outputFiles) {
+-    files = $$ARGS
+-
+-    for(file, files) {
+-        !outputFile($$file):return(false)
+-    }
+-
+-    return(true)
+-}
+diff --git a/connection/connection.pro b/connection/connection.pro
+deleted file mode 100644
+index 979b55d..0000000
+--- a/connection/connection.pro
++++ /dev/null
+@@ -1,96 +0,0 @@
+-include(../config.pri)
+-
+-TOP_DIR = ..
+-
+-VERSION = $$MALIIT_ABI_VERSION
+-TEMPLATE = lib
+-TARGET = $$TOP_DIR/lib/$$MALIIT_CONNECTION_LIB
+-
+-include($$TOP_DIR/common/libmaliit-common.pri)
+-include($$TOP_DIR/weston-protocols/libmaliit-weston-protocols.pri)
+-
+-DEFINES += MALIIT_INPUTCONTEXT_NAME=\\\"$${MALIIT_INPUTCONTEXT_NAME}\\\"
+-CONFIG += staticlib
+-
+-# Interface classes
+-PUBLIC_HEADERS += \
+-    connectionfactory.h \
+-    minputcontextconnection.h \
+-
+-PUBLIC_SOURCES += \
+-    connectionfactory.cpp \
+-    minputcontextconnection.cpp \
+-
+-# Default to building qdbus based connection
+-CONFIG += qdbus-dbus-connection
+-
+-wayland {
+-    QT += gui-private
+-    PUBLIC_SOURCES += \
+-        waylandinputmethodconnection.cpp
+-    PUBLIC_HEADERS += \
+-        waylandinputmethodconnection.h
+-}
+-
+-include($$TOP_DIR/dbus_interfaces/dbus_interfaces.pri)
+-
+-qdbus-dbus-connection {
+-    server_adaptor.files = $$DBUS_SERVER_XML
+-    server_adaptor.header_flags = -i dbusinputcontextconnection.h -l DBusInputContextConnection
+-    server_adaptor.source_flags = -l DBusInputContextConnection
+-
+-    context_adaptor.files = $$DBUS_CONTEXT_XML
+-    context_adaptor.header_flags = -i dbusserverconnection.h -l DBusServerConnection
+-    context_adaptor.source_flags = -l DBusServerConnection
+-
+-    DBUS_ADAPTORS = server_adaptor context_adaptor
+-    DBUS_INTERFACES = $$DBUS_SERVER_XML $$DBUS_CONTEXT_XML
+-    QDBUSXML2CPP_INTERFACE_HEADER_FLAGS = -i maliit/namespace.h -i maliit/settingdata.h
+-
+-    QT += dbus
+-
+-    !enable-dbus-activation {
+-        DEFINES += NO_DBUS_ACTIVATION
+-    }
+-
+-    PRIVATE_HEADERS += \
+-        dbuscustomarguments.h \
+-        dbusinputcontextconnection.h \
+-        serverdbusaddress.h \
+-        mimserverconnection.h \
+-        dbusserverconnection.h \
+-        inputcontextdbusaddress.h \
+-
+-    PRIVATE_SOURCES += \
+-        dbuscustomarguments.cpp \
+-        dbusinputcontextconnection.cpp \
+-        serverdbusaddress.cpp \
+-        mimserverconnection.cpp \
+-        dbusserverconnection.cpp \
+-        inputcontextdbusaddress.cpp \
+-
+-    # DBus activation
+-    enable-dbus-activation {
+-        outputFiles(org.maliit.server.service)
+-
+-        DBUS_SERVICES_DIR = $$system(pkg-config --variable session_bus_services_dir dbus-1)
+-        DBUS_SERVICES_PREFIX = $$system(pkg-config --variable prefix dbus-1)
+-        local-install {
+-            DBUS_SERVICES_DIR = $$replace(DBUS_SERVICES_DIR, $$DBUS_SERVICES_PREFIX, $$PREFIX)
+-        }
+-
+-        install_services.path = $$DBUS_SERVICES_DIR
+-        install_services.files = org.maliit.server.service
+-        INSTALLS += install_services
+-    }
+-}
+-
+-HEADERS += \
+-    $$PUBLIC_HEADERS \
+-    $$PRIVATE_HEADERS \
+-
+-SOURCES += \
+-    $$PUBLIC_SOURCES \
+-    $$PRIVATE_SOURCES \
+-
+-OTHER_FILES += libmaliit-connection.pri
+diff --git a/connection/dbusinputcontextconnection.cpp b/connection/dbusinputcontextconnection.cpp
+index d065495..64d03c8 100644
+--- a/connection/dbusinputcontextconnection.cpp
++++ b/connection/dbusinputcontextconnection.cpp
+@@ -14,7 +14,7 @@
+ 
+ #include "dbusinputcontextconnection.h"
+ 
+-#include "minputmethodserver1interface_adaptor.h"
++#include "minputmethodserver1interfaceadaptor.h"
+ #include "minputmethodcontext1interface_interface.h"
+ #include "dbuscustomarguments.h"
+ 
+diff --git a/connection/dbusserverconnection.cpp b/connection/dbusserverconnection.cpp
+index 9fce070..7213f1c 100644
+--- a/connection/dbusserverconnection.cpp
++++ b/connection/dbusserverconnection.cpp
+@@ -17,7 +17,7 @@
+ #include <maliit/namespace.h>
+ #include <maliit/settingdata.h>
+ 
+-#include "minputmethodcontext1interface_adaptor.h"
++#include "minputmethodcontext1interfaceadaptor.h"
+ #include "minputmethodserver1interface_interface.h"
+ #include "dbuscustomarguments.h"
+ 
+diff --git a/connection/libmaliit-connection.pri b/connection/libmaliit-connection.pri
+deleted file mode 100644
+index 02d4471..0000000
+--- a/connection/libmaliit-connection.pri
++++ /dev/null
+@@ -1,17 +0,0 @@
+-# Use when a .pro file requires libmaliit-connection
+-# The .pro file must define TOP_DIR to be a relative path
+-# to the top-level source/build directory, and include config.pri
+-
+-include($$PWD/../common/libmaliit-common.pri)
+-include($$PWD/../weston-protocols/libmaliit-weston-protocols.pri)
+-
+-LIBS += $$TOP_DIR/lib/$$maliitStaticLib($${MALIIT_CONNECTION_LIB})
+-POST_TARGETDEPS += $$TOP_DIR/lib/$$maliitStaticLib($${MALIIT_CONNECTION_LIB})
+-INCLUDEPATH += $$TOP_DIR/connection $$OUT_PWD/$$TOP_DIR/connection
+-
+-QT += dbus
+-
+-wayland {
+-    CONFIG += link_pkgconfig
+-    PKGCONFIG += wayland-client
+-}
+diff --git a/connection/org.maliit.server.service.in b/connection/org.maliit.server.service.in
+index 6b38706..6a3e921 100644
+--- a/connection/org.maliit.server.service.in
++++ b/connection/org.maliit.server.service.in
+@@ -1,4 +1,4 @@
+ [D-BUS Service]
+ Name=org.maliit.server
+-Exec=@BINDIR@/maliit-server @MALIIT_SERVER_ARGUMENTS@
++Exec=@CMAKE_INSTALL_PREFIX@/bin/maliit-server @MALIIT_SERVER_ARGUMENTS@
+ 
+diff --git a/dbus_interfaces/dbus_interfaces.pri b/dbus_interfaces/dbus_interfaces.pri
+deleted file mode 100644
+index 3adcd5a..0000000
+--- a/dbus_interfaces/dbus_interfaces.pri
++++ /dev/null
+@@ -1,4 +0,0 @@
+-DBUS_XML_DIR = $$PWD
+-
+-DBUS_CONTEXT_XML = $$DBUS_XML_DIR/minputmethodcontext1interface.xml
+-DBUS_SERVER_XML = $$DBUS_XML_DIR/minputmethodserver1interface.xml
+diff --git a/dbus_interfaces/dbus_interfaces.pro b/dbus_interfaces/dbus_interfaces.pro
+deleted file mode 100644
+index 87ee2f7..0000000
+--- a/dbus_interfaces/dbus_interfaces.pro
++++ /dev/null
+@@ -1,11 +0,0 @@
+-TOP_DIR = ..
+-
+-include($$TOP_DIR/config.pri)
+-
+-TEMPLATE = lib
+-CONFIG += plugin
+-TARGET = dummy
+-
+-OTHER_FILES += \
+-    minputmethodcontext1interface.xml \
+-    minputmethodserver1interface.xml
+diff --git a/defines.pri b/defines.pri
+deleted file mode 100644
+index 61f803a..0000000
+--- a/defines.pri
++++ /dev/null
+@@ -1,16 +0,0 @@
+-MALIIT_PLUGINS = maliit/plugins
+-MALIIT_PLUGINS_DATA = maliit/plugins
+-MALIIT_SERVER = maliit-server
+-MALIIT_PLUGINS_LIB = maliit-plugins
+-MALIIT_PLUGINS_QUICK_LIB = maliit-plugins-quick
+-MALIIT_PLUGINS_HEADER = maliit/plugins
+-MALIIT_PLUGINS_QUICK_HEADER = maliit/plugins-quick
+-MALIIT_PLUGINS_QUICK_FACTORY = maliit-plugins-quick-factory
+-MALIIT_SERVER_HEADER = maliit/server
+-MALIIT_TEST_SUITE = maliit-framework-tests
+-MALIIT_PACKAGENAME = maliit-framework
+-MALIIT_PACKAGE_BRIEF = Maliit Framework
+-MALIIT_ATTRIBUTE_EXTENSIONS = $${MALIIT_PACKAGENAME}/extensions
+-MALIIT_CONFIG_ROOT = /maliit/
+-MALIIT_INPUTCONTEXT_NAME = Maliit
+-MALIIT_CONNECTION_LIB = maliit-connection
+diff --git a/doc/Doxyfile.in b/doc/Doxyfile.in
+new file mode 100644
+index 0000000..0a49af1
+--- /dev/null
++++ b/doc/Doxyfile.in
+@@ -0,0 +1,154 @@
++PROJECT_NAME          = Maliit Framework
++OUTPUT_DIRECTORY      = @CMAKE_BINARY_DIR@/doc
++OUTPUT_LANGUAGE       = English
++DISABLE_INDEX         = YES
++EXTRACT_ALL           = YES
++EXTRACT_PRIVATE       = NO
++HIDE_UNDOC_MEMBERS    = NO
++HIDE_UNDOC_CLASSES    = NO
++HIDE_UNDOC_RELATIONS  = YES
++BRIEF_MEMBER_DESC     = NO
++REPEAT_BRIEF          = YES
++ALWAYS_DETAILED_SEC   = NO
++ENUM_VALUES_PER_LINE  = 0
++FULL_PATH_NAMES       = NO
++STRIP_FROM_PATH       = 
++INTERNAL_DOCS         = NO
++CLASS_DIAGRAMS        = YES
++SOURCE_BROWSER        = NO
++INLINE_SOURCES        = NO
++STRIP_CODE_COMMENTS   = YES
++CASE_SENSE_NAMES      = NO
++VERBATIM_HEADERS      = NO
++SHOW_INCLUDE_FILES    = NO
++JAVADOC_AUTOBRIEF     = YES
++INHERIT_DOCS          = YES
++INLINE_INFO           = YES
++SORT_MEMBER_DOCS      = YES
++TAB_SIZE              = 8
++ENABLED_SECTIONS      = 
++HIDE_FRIEND_COMPOUNDS = YES
++CREATE_SUBDIRS        = NO
++SHOW_USED_FILES       = NO
++
++#---------------------------------------------------------------------------
++# configuration options related to warning and progress messages
++#---------------------------------------------------------------------------
++
++QUIET                 = YES
++WARNINGS              = YES
++WARN_IF_UNDOCUMENTED  = YES
++WARN_FORMAT           = "File: $file (row: $line) $text"
++WARN_LOGFILE          = "doxygen.log"
++
++#---------------------------------------------------------------------------
++# configuration options related to the input files
++#---------------------------------------------------------------------------
++
++FILE_VERSION_FILTER   = "echo @PROJECT_VERSION@"
++INPUT                 = @CMAKE_SOURCE_DIR@/src/ \
++                        @CMAKE_SOURCE_DIR@/common/maliit/ \
++                        @CMAKE_SOURCE_DIR@/doc/src/
++FILE_PATTERNS         = *.cpp *.h *.dox
++RECURSIVE             = YES
++EXCLUDE               = 
++EXCLUDE_PATTERNS      = moc_*.cpp *_p.h *_p.cpp
++IMAGE_PATH            = @CMAKE_SOURCE_DIR@/doc/images
++INPUT_FILTER          = "sed -f @CMAKE_SOURCE_DIR@/doc/aliases.sed <"
++EXAMPLE_PATH          = @CMAKE_SOURCE_DIR@/examples/apps/
++
++#---------------------------------------------------------------------------
++# configuration options related to the alphabetical class index
++#---------------------------------------------------------------------------
++
++ALPHABETICAL_INDEX    = YES
++COLS_IN_ALPHA_INDEX   = 4
++IGNORE_PREFIX         = M
++
++#---------------------------------------------------------------------------
++# configuration options related to the HTML output
++#---------------------------------------------------------------------------
++
++GENERATE_TESTLIST     = YES
++GENERATE_HTML         = YES
++HTML_OUTPUT           = html
++HTML_HEADER           = @CMAKE_SOURCE_DIR@/doc/src/header.html
++HTML_FOOTER           = @CMAKE_SOURCE_DIR@/doc/src/footer.html
++HTML_STYLESHEET       = @CMAKE_SOURCE_DIR@/doc/src/meego-im.css
++GENERATE_HTMLHELP     = NO
++
++#---------------------------------------------------------------------------
++# configuration options related to the LaTeX output
++#---------------------------------------------------------------------------
++
++GENERATE_LATEX        = NO
++#LATEX_OUTPUT          = latex
++#COMPACT_LATEX         = NO
++#PAPER_TYPE            = a4wide
++#EXTRA_PACKAGES        = 
++#LATEX_HEADER          = 
++#PDF_HYPERLINKS        = NO
++#LATEX_BATCHMODE       = NO
++
++#---------------------------------------------------------------------------
++# configuration options related to the RTF output
++#---------------------------------------------------------------------------
++
++GENERATE_RTF          = NO
++#RTF_OUTPUT            = rtf
++#COMPACT_RTF           = NO
++#RTF_HYPERLINKS        = NO
++
++#---------------------------------------------------------------------------
++# configuration options related to the man page output
++#---------------------------------------------------------------------------
++
++GENERATE_MAN          = NO
++#MAN_OUTPUT            = man
++#MAN_EXTENSION         = .3
++
++#---------------------------------------------------------------------------
++# Configuration options related to the preprocessor   
++#---------------------------------------------------------------------------
++
++ENABLE_PREPROCESSING  = YES
++MACRO_EXPANSION       = NO
++SEARCH_INCLUDES       = YES
++INCLUDE_PATH          = 
++PREDEFINED            = DOXYGEN_SHOULD_SKIP_THIS
++EXPAND_ONLY_PREDEF    = YES
++
++#---------------------------------------------------------------------------
++# Configuration::addtions related to external references   
++#---------------------------------------------------------------------------
++
++TAGFILES              = @CMAKE_SOURCE_DIR@/qt.tag=http://doc.trolltech.com/4.6
++# GENERATE_TAGFILE      = YES
++ALLEXTERNALS          = NO
++PERL_PATH             = /usr/bin/perl
++
++#---------------------------------------------------------------------------
++# Configuration options related to the dot tool   
++#---------------------------------------------------------------------------
++
++HAVE_DOT              = YES
++CLASS_GRAPH           = YES
++COLLABORATION_GRAPH   = NO
++INCLUDE_GRAPH         = NO
++GRAPHICAL_HIERARCHY   = NO
++#DOT_PATH              = /scratchbox/devkits/doctools/bin/
++
++#---------------------------------------------------------------------------
++# Configuration::addtions related to the search engine   
++#---------------------------------------------------------------------------
++
++SEARCHENGINE          = NO
++#CGI_NAME              = search.cgi
++#CGI_URL               = 
++#DOC_URL               = 
++#DOC_ABSPATH           = 
++#BIN_ABSPATH           = /usr/local/bin/
++# EXT_DOC_PATHS         = 
++
++EXCLUDE_SYMBOLS += *Private *View *Draft *Daemon*
++
+diff --git a/doc/doc.pro b/doc/doc.pro
+deleted file mode 100644
+index f3ff235..0000000
+--- a/doc/doc.pro
++++ /dev/null
+@@ -1,41 +0,0 @@
+-include(../config.pri)
+-
+-DOXYGEN_BIN=doxygen
+-
+-TEMPLATE = lib
+-CONFIG += plugin
+-TARGET = dummy
+-
+-outputFiles(mdoxy.cfg)
+-
+-DOXYGEN = .
+-
+-HTML_BUILD_DIR = $${OUT_PWD}/html/
+-# qmake creates wrong install rules for directories
+-# that do not exist at qmake time, so we hack it here
+-system(mkdir -p $$HTML_BUILD_DIR)
+-
+-doc.name = doc
+-doc.CONFIG += target_predeps no_link
+-doc.output = $$HTML_BUILD_DIR/index.html
+-doc.clean_commands = rm -rf $$HTML_BUILD_DIR/*
+-doc.clean = doxygen.log doxygen.log.xml
+-doc.input = DOXYGEN
+-
+-isEmpty(DOXYGEN_BIN) {
+-    doc.commands = @echo "Unable to detect doxygen in PATH"
+-} else {
+-    # Build docs
+-    doc.commands += $${DOXYGEN_BIN} $${OUT_PWD}/mdoxy.cfg;
+-    doc.commands += cp $${PWD}/src/images/* $$HTML_BUILD_DIR ;
+-    doc.commands += cp $${PWD}/src/*.html $$HTML_BUILD_DIR ;
+-    doc.commands += $${PWD}/xmlize.pl;
+-
+-    # Install rules
+-    htmldocs.files = $$HTML_BUILD_DIR
+-    htmldocs.path = $$DOCDIR/$$MALIIT_PACKAGENAME
+-    htmldocs.CONFIG += no_check_exist directory
+-    INSTALLS += htmldocs
+-}
+-
+-QMAKE_EXTRA_COMPILERS += doc
+diff --git a/doc/mdoxy.cfg.in b/doc/mdoxy.cfg.in
+deleted file mode 100644
+index 6524709..0000000
+--- a/doc/mdoxy.cfg.in
++++ /dev/null
+@@ -1,156 +0,0 @@
+-PROJECT_NAME          = @MALIIT_PACKAGE_BRIEF@
+-OUTPUT_DIRECTORY      = @MALIIT_OUT_DIR@
+-OUTPUT_LANGUAGE       = English
+-DISABLE_INDEX         = YES
+-EXTRACT_ALL           = YES
+-EXTRACT_PRIVATE       = NO
+-HIDE_UNDOC_MEMBERS    = NO
+-HIDE_UNDOC_CLASSES    = NO
+-HIDE_UNDOC_RELATIONS  = YES
+-BRIEF_MEMBER_DESC     = NO
+-REPEAT_BRIEF          = YES
+-ALWAYS_DETAILED_SEC   = NO
+-ENUM_VALUES_PER_LINE  = 0
+-FULL_PATH_NAMES       = NO
+-STRIP_FROM_PATH       = 
+-INTERNAL_DOCS         = NO
+-CLASS_DIAGRAMS        = YES
+-SOURCE_BROWSER        = NO
+-INLINE_SOURCES        = NO
+-STRIP_CODE_COMMENTS   = YES
+-CASE_SENSE_NAMES      = NO
+-VERBATIM_HEADERS      = NO
+-SHOW_INCLUDE_FILES    = NO
+-JAVADOC_AUTOBRIEF     = YES
+-INHERIT_DOCS          = YES
+-INLINE_INFO           = YES
+-SORT_MEMBER_DOCS      = YES
+-TAB_SIZE              = 8
+-ENABLED_SECTIONS      = 
+-HIDE_FRIEND_COMPOUNDS = YES
+-CREATE_SUBDIRS        = NO
+-SHOW_USED_FILES       = NO
+-
+-#---------------------------------------------------------------------------
+-# configuration options related to warning and progress messages
+-#---------------------------------------------------------------------------
+-
+-QUIET                 = YES
+-WARNINGS              = YES
+-WARN_IF_UNDOCUMENTED  = YES
+-WARN_FORMAT           = "File: $file (row: $line) $text"
+-WARN_LOGFILE          = "doxygen.log"
+-
+-#---------------------------------------------------------------------------
+-# configuration options related to the input files
+-#---------------------------------------------------------------------------
+-
+-FILE_VERSION_FILTER   = "echo @MALIIT_VERSION@"
+-INPUT                 = @MALIIT_IN_DIR@/../src/ \
+-                        @MALIIT_IN_DIR@/../maliit/ \
+-                        @MALIIT_IN_DIR@/../common/maliit/ \
+-                        @MALIIT_IN_DIR@/src/
+-FILE_PATTERNS         = *.cpp *.h *.dox
+-RECURSIVE             = YES
+-EXCLUDE               = 
+-EXCLUDE_PATTERNS      = moc_*.cpp *_p.h *_p.cpp */demo/*
+-IMAGE_PATH            = @MALIIT_IN_DIR@/images
+-INPUT_FILTER          = "sed -f @MALIIT_IN_DIR@/aliases.sed <"
+-EXAMPLE_PATH          = @MALIIT_IN_DIR@/../examples/apps/
+-
+-#---------------------------------------------------------------------------
+-# configuration options related to the alphabetical class index
+-#---------------------------------------------------------------------------
+-
+-ALPHABETICAL_INDEX    = YES
+-COLS_IN_ALPHA_INDEX   = 4
+-IGNORE_PREFIX         = M
+-
+-#---------------------------------------------------------------------------
+-# configuration options related to the HTML output
+-#---------------------------------------------------------------------------
+-
+-GENERATE_TESTLIST     = YES
+-GENERATE_HTML         = YES
+-HTML_OUTPUT           = html
+-HTML_HEADER           = @MALIIT_IN_DIR@/src/header.html
+-HTML_FOOTER           = @MALIIT_IN_DIR@/src/footer.html
+-HTML_STYLESHEET       = @MALIIT_IN_DIR@/src/meego-im.css
+-HTML_ALIGN_MEMBERS    = YES
+-GENERATE_HTMLHELP     = NO
+-
+-#---------------------------------------------------------------------------
+-# configuration options related to the LaTeX output
+-#---------------------------------------------------------------------------
+-
+-GENERATE_LATEX        = NO
+-#LATEX_OUTPUT          = latex
+-#COMPACT_LATEX         = NO
+-#PAPER_TYPE            = a4wide
+-#EXTRA_PACKAGES        = 
+-#LATEX_HEADER          = 
+-#PDF_HYPERLINKS        = NO
+-#LATEX_BATCHMODE       = NO
+-
+-#---------------------------------------------------------------------------
+-# configuration options related to the RTF output
+-#---------------------------------------------------------------------------
+-
+-GENERATE_RTF          = NO
+-#RTF_OUTPUT            = rtf
+-#COMPACT_RTF           = NO
+-#RTF_HYPERLINKS        = NO
+-
+-#---------------------------------------------------------------------------
+-# configuration options related to the man page output
+-#---------------------------------------------------------------------------
+-
+-GENERATE_MAN          = NO
+-#MAN_OUTPUT            = man
+-#MAN_EXTENSION         = .3
+-
+-#---------------------------------------------------------------------------
+-# Configuration options related to the preprocessor   
+-#---------------------------------------------------------------------------
+-
+-ENABLE_PREPROCESSING  = YES
+-MACRO_EXPANSION       = NO
+-SEARCH_INCLUDES       = YES
+-INCLUDE_PATH          = 
+-PREDEFINED            = DOXYGEN_SHOULD_SKIP_THIS
+-EXPAND_ONLY_PREDEF    = YES
+-
+-#---------------------------------------------------------------------------
+-# Configuration::addtions related to external references   
+-#---------------------------------------------------------------------------
+-
+-TAGFILES              = @MALIIT_IN_DIR@/qt.tag=http://doc.trolltech.com/4.6
+-# GENERATE_TAGFILE      = YES
+-ALLEXTERNALS          = NO
+-PERL_PATH             = /scratchbox/tools/bin
+-
+-#---------------------------------------------------------------------------
+-# Configuration options related to the dot tool   
+-#---------------------------------------------------------------------------
+-
+-HAVE_DOT              = YES
+-CLASS_GRAPH           = YES
+-COLLABORATION_GRAPH   = NO
+-INCLUDE_GRAPH         = NO
+-GRAPHICAL_HIERARCHY   = NO
+-#DOT_PATH              = /scratchbox/devkits/doctools/bin/
+-
+-#---------------------------------------------------------------------------
+-# Configuration::addtions related to the search engine   
+-#---------------------------------------------------------------------------
+-
+-SEARCHENGINE          = NO
+-#CGI_NAME              = search.cgi
+-#CGI_URL               = 
+-#DOC_URL               = 
+-#DOC_ABSPATH           = 
+-#BIN_ABSPATH           = /usr/local/bin/
+-# EXT_DOC_PATHS         = 
+-
+-EXCLUDE_SYMBOLS += *Private *View *Draft *Daemon*
+-
+diff --git a/doc/tr.sed b/doc/tr.sed
+deleted file mode 100644
+index 9a92d00..0000000
+--- a/doc/tr.sed
++++ /dev/null
+@@ -1,3 +0,0 @@
+-s/&/\&\#38\;\#38\;/g
+-s/</\&\#38\;\#60\;/g
+-s/>/\&\#x003E\;/g
+diff --git a/doc/xmlize.pl b/doc/xmlize.pl
+deleted file mode 100755
+index 249fbaf..0000000
+--- a/doc/xmlize.pl
++++ /dev/null
+@@ -1,40 +0,0 @@
+-#!/usr/bin/perl
+-
+-sub xml($) {
+-	$buffer = $_[0];
+-	$buffer =~ s/^File: (.*) \(row: (\d+)\) (.*)/\t\<Message file=\"$1\" row=\"$2\"\>\n\t\t$3\n\t\<\/Message\>\n/;
+-	return $buffer;
+-}
+-
+-open(FIN,"doxygen.log");
+-open(FOUT,">doxygen.log.xml");
+-
+-print FOUT "<Doxygen>\n";
+-
+-$buffer = "";
+-while (<FIN>) {
+-	chop;
+-	$row = $_;
+-
+-	$row =~ s/&/&#38;#38;/g;
+-	$row =~ s/</&#38;#60;/g;
+-	$row =~ s/>/&#x003E;/g;
+-
+-	if ( $row =~ /^File: / ) {
+-		if (length($buffer)>0) {
+-			print FOUT xml($buffer);
+-			$buffer = "";
+-		} 
+-		$buffer .= $row;
+-	} else {
+-		$buffer .= $row;
+-	}
+-
+-}
+-print FOUT "</Doxygen>\n";
+-
+-close(FIN);
+-close(FOUT);
+-
+-
+-
+diff --git a/examples/apps/apps.pro b/examples/apps/apps.pro
+deleted file mode 100644
+index 1f84b76..0000000
+--- a/examples/apps/apps.pro
++++ /dev/null
+@@ -1,3 +0,0 @@
+-TEMPLATE = subdirs
+-
+-SUBDIRS = plainqt
+diff --git a/examples/apps/plainqt/plainqt.pro b/examples/apps/plainqt/plainqt.pro
+deleted file mode 100644
+index 4ce16b5..0000000
+--- a/examples/apps/plainqt/plainqt.pro
++++ /dev/null
+@@ -1,46 +0,0 @@
+-TEMPLATE = app
+-TARGET = maliit-exampleapp-plainqt
+-
+-OBJECTS_DIR = .obj
+-MOC_DIR = .moc
+-
+-DEPENDPATH += .
+-
+-BUILD_TYPE = unittest
+-
+-!contains(QT_MAJOR_VERSION, 5) {
+-    contains(BUILD_TYPE, skeleton) {
+-        CONFIG += link_pkgconfig
+-        PKGCONFIG += maliit
+-        INCLUDEPATH += $$system(pkg-config --cflags maliit | tr \' \' \'\\n\' | grep ^-I | cut -d I -f 2-)
+-    }
+-}
+-
+-contains(BUILD_TYPE, unittest) {
+-    include(../../../config.pri)
+-    target.path = $$BINDIR
+-    INSTALLS += target
+-
+-    !contains(QT_MAJOR_VERSION, 5) {
+-        # Used for testing purposes, can be deleted when used as a project skeleton
+-        # Build against in-tree libs
+-        TOP_DIR = ../../..
+-        include($$TOP_DIR/common/libmaliit-common.pri)
+-        include($$TOP_DIR/maliit/libmaliit.pri)
+-    }
+-}
+-
+-SOURCES += \
+-           plainqt.cpp \
+-           mainwindow.cpp \
+-
+-HEADERS += \
+-           mainwindow.h \
+-
+-contains(QT_MAJOR_VERSION, 4) {
+-    QT += core gui
+-} else {
+-    QT += core gui widgets
+-}
+-
+-QMAKE_CLEAN += maliit-exampleapp-plainqt
+diff --git a/examples/examples.pro b/examples/examples.pro
+deleted file mode 100644
+index fe1d84e..0000000
+--- a/examples/examples.pro
++++ /dev/null
+@@ -1,2 +0,0 @@
+-TEMPLATE = subdirs
+-SUBDIRS = apps plugins
+diff --git a/examples/plugins/cxx/cxx.pro b/examples/plugins/cxx/cxx.pro
+deleted file mode 100644
+index 3f8e7cf..0000000
+--- a/examples/plugins/cxx/cxx.pro
++++ /dev/null
+@@ -1,2 +0,0 @@
+-TEMPLATE = subdirs
+-SUBDIRS = helloworld override
+diff --git a/examples/plugins/cxx/helloworld/helloworld.pro b/examples/plugins/cxx/helloworld/helloworld.pro
+deleted file mode 100644
+index 0c9bd7f..0000000
+--- a/examples/plugins/cxx/helloworld/helloworld.pro
++++ /dev/null
+@@ -1,50 +0,0 @@
+-TEMPLATE = lib
+-TARGET = cxxhelloworldplugin
+-
+-OBJECTS_DIR = .obj
+-MOC_DIR = .moc
+-
+-CONFIG += debug plugin
+-
+-contains(QT_MAJOR_VERSION, 4) {
+-    QT += core gui
+-} else {
+-    QT += core gui widgets
+-}
+-
+-HEADERS += \
+-    helloworldplugin.h \
+-    helloworldinputmethod.h \
+-
+-SOURCES += \
+-    helloworldplugin.cpp \
+-    helloworldinputmethod.cpp \
+-
+-OTHER_FILES += \
+-    helloworldplugin.json \
+-
+-BUILD_TYPE = unittest
+-
+-contains(BUILD_TYPE, skeleton) {
+-    CONFIG += link_pkgconfig
+-    PKGCONFIG += maliit-plugins
+-    target.path += $$system(pkg-config --variable pluginsdir maliit-plugins)
+-    INCLUDEPATH += $$system(pkg-config --cflags maliit-plugins | tr \' \' \'\\n\' | grep ^-I | cut -d I -f 2-)
+-    INSTALLS += target
+-}
+-
+-contains(BUILD_TYPE, unittest) {
+-    # Used for testing purposes, can be deleted when used as a project skeleton
+-    # Build against in-tree libs
+-    TOP_DIR = ../../../..
+-
+-    include($$TOP_DIR/config.pri)
+-
+-    include($$TOP_DIR/common/libmaliit-common.pri)
+-    include($$TOP_DIR/src/libmaliit-plugins.pri)
+-
+-    target.path += $$MALIIT_TEST_PLUGINS_DIR/examples/cxx/helloworld
+-    INSTALLS += target
+-}
+-
+-QMAKE_CLEAN += libcxxhelloworldplugin.so
+diff --git a/examples/plugins/cxx/override/override.pro b/examples/plugins/cxx/override/override.pro
+deleted file mode 100644
+index dd241d9..0000000
+--- a/examples/plugins/cxx/override/override.pro
++++ /dev/null
+@@ -1,50 +0,0 @@
+-TEMPLATE = lib
+-TARGET = cxxoverrideplugin
+-
+-OBJECTS_DIR = .obj
+-MOC_DIR = .moc
+-
+-CONFIG += debug plugin
+-
+-contains(QT_MAJOR_VERSION, 4) {
+-    QT += core gui
+-} else {
+-    QT += core gui widgets
+-}
+-
+-HEADERS += \
+-    overrideplugin.h \
+-    overrideinputmethod.h \
+-
+-SOURCES += \
+-    overrideplugin.cpp \
+-    overrideinputmethod.cpp \
+-
+-OTHER_FILES += \
+-    override.json \
+-
+-BUILD_TYPE = unittest
+-
+-contains(BUILD_TYPE, skeleton) {
+-    CONFIG += link_pkgconfig
+-    PKGCONFIG += maliit-plugins
+-    target.path += $$system(pkg-config --variable pluginsdir maliit-plugins)
+-    INCLUDEPATH += $$system(pkg-config --cflags maliit-plugins | tr \' \' \'\\n\' | grep ^-I | cut -d I -f 2-)
+-    INSTALLS += target
+-}
+-
+-contains(BUILD_TYPE, unittest) {
+-    # Used for testing purposes, can be deleted when used as a project skeleton
+-    # Build against in-tree libs
+-    TOP_DIR = ../../../..
+-
+-    include($$TOP_DIR/config.pri)
+-
+-    include($$TOP_DIR/common/libmaliit-common.pri)
+-    include($$TOP_DIR/src/libmaliit-plugins.pri)
+-
+-    target.path += $$MALIIT_TEST_PLUGINS_DIR/examples/cxx/override
+-    INSTALLS += target
+-}
+-
+-QMAKE_CLEAN += libcxxoverrideplugin.so
+diff --git a/examples/plugins/plugins.pro b/examples/plugins/plugins.pro
+deleted file mode 100644
+index 6b0af8b..0000000
+--- a/examples/plugins/plugins.pro
++++ /dev/null
+@@ -1,2 +0,0 @@
+-TEMPLATE = subdirs
+-SUBDIRS = cxx qml
+diff --git a/examples/plugins/qml/.gitignore b/examples/plugins/qml/.gitignore
+deleted file mode 100644
+index 5b50766..0000000
+--- a/examples/plugins/qml/.gitignore
++++ /dev/null
+@@ -1 +0,0 @@
+-qrc_*
+diff --git a/examples/plugins/qml/cyclekeys/cyclekeys.pro b/examples/plugins/qml/cyclekeys/cyclekeys.pro
+deleted file mode 100644
+index 08a4a40..0000000
+--- a/examples/plugins/qml/cyclekeys/cyclekeys.pro
++++ /dev/null
+@@ -1,50 +0,0 @@
+-TEMPLATE = lib
+-TARGET = qmlcyclekeysplugin
+-
+-OBJECTS_DIR = .obj
+-MOC_DIR = .moc
+-
+-CONFIG += debug plugin
+-
+-contains(QT_MAJOR_VERSION, 4) {
+-    QT = core gui declarative
+-} else {
+-    QT = core gui widgets declarative
+-}
+-
+-SOURCES += cyclekeysplugin.cpp
+-HEADERS += cyclekeysplugin.h
+-RESOURCES = cyclekeys.qrc
+-
+-OTHER_FILES += \
+-    main.qml \
+-    CycleKey.qml \
+-
+-target.depends = $${PWD}/main.qml $${PWD}/CycleKey.qml
+-
+-BUILD_TYPE = unittest
+-
+-contains(BUILD_TYPE, skeleton) {
+-    CONFIG += link_pkgconfig
+-    PKGCONFIG += maliit-plugins-quick
+-    target.path += $$system(pkg-config --variable pluginsdir maliit-plugins)
+-    INCLUDEPATH += $$system(pkg-config --cflags maliit-plugins-quick | tr \' \' \'\\n\' | grep ^-I | cut -d I -f 2-)
+-    INSTALLS += target
+-}
+-
+-contains(BUILD_TYPE, unittest) {
+-    # Used for testing purposes, can be deleted when used as a project skeleton
+-    # Build against in-tree libs
+-    TOP_DIR = ../../../..
+-
+-    include($$TOP_DIR/config.pri)
+-
+-    include($$TOP_DIR/common/libmaliit-common.pri)
+-    include($$TOP_DIR/src/libmaliit-plugins.pri)
+-    include($$TOP_DIR/maliit-plugins-quick/libmaliit-plugins-quick.pri)
+-    
+-    target.path += $$MALIIT_TEST_PLUGINS_DIR/examples/qml/cyclekeys
+-    INSTALLS += target
+-}
+-
+-QMAKE_CLEAN += libqmlcyclekeysplugin.so
+diff --git a/examples/plugins/qml/helloworld/helloworld.pro b/examples/plugins/qml/helloworld/helloworld.pro
+deleted file mode 100644
+index 95d1f5c..0000000
+--- a/examples/plugins/qml/helloworld/helloworld.pro
++++ /dev/null
+@@ -1,44 +0,0 @@
+-# To avoid qmake from cleaning and trying to build
+-# the .qml file with g++....
+-TEMPLATE = lib
+-TARGET = dummy
+-
+-PLUGIN_FILE = helloworld.qml
+-
+-# Target for copying the qml file to build-dir
+-build.target = $$OUT_PWD/$$PLUGIN_FILE
+-build.output = $$OUT_PWD/$$PLUGIN_FILE
+-build.depends = $$PWD/$$PLUGIN_FILE
+-build.commands += cp $$PWD/$$PLUGIN_FILE $$OUT_PWD/$$PLUGIN_FILE
+-
+-PRE_TARGETDEPS += $$OUT_PWD/$$PLUGIN_FILE
+-QMAKE_EXTRA_TARGETS += build
+-
+-# Install target
+-plugin.files = $$OUT_PWD/$$PLUGIN_FILE
+-plugin.CONFIG += no_check_exist
+-# plugin.path # Different depending on BUILD_TYPE
+-
+-OTHER_FILES = $$PLUGIN_FILE
+-
+-BUILD_TYPE = unittest
+-
+-contains(BUILD_TYPE, skeleton) {
+-    CONFIG += link_pkgconfig
+-    PKGCONFIG += maliit-plugins-quick
+-    plugin.path += $$system(pkg-config --variable pluginsdir maliit-plugins)
+-    INSTALLS += plugin
+-}
+-
+-contains(BUILD_TYPE, unittest) {
+-    # Used for testing purposes, can be deleted when used as a project skeleton
+-    # Build against in-tree libs
+-    TOP_DIR = ../../../..
+-
+-    include($$TOP_DIR/config.pri)
+-
+-    plugin.path += $$MALIIT_TEST_PLUGINS_DIR/examples/qml/helloworld
+-    INSTALLS += plugin
+-}
+-
+-QMAKE_CLEAN += libdummy.so*
+diff --git a/examples/plugins/qml/override/override.pro b/examples/plugins/qml/override/override.pro
+deleted file mode 100644
+index fa29efb..0000000
+--- a/examples/plugins/qml/override/override.pro
++++ /dev/null
+@@ -1,48 +0,0 @@
+-TEMPLATE = lib
+-TARGET = qmloverrideplugin
+-
+-OBJECTS_DIR = .obj
+-MOC_DIR = .moc
+-
+-CONFIG += debug plugin
+-
+-contains(QT_MAJOR_VERSION, 4) {
+-    QT = core gui declarative
+-} else {
+-    QT = core gui widgets declarative
+-}
+-
+-SOURCES += overrideplugin.cpp
+-HEADERS += overrideplugin.h
+-RESOURCES = override.qrc
+-target.depends = $$PWD/override.qml
+-
+-OTHER_FILES += \
+-    override.qml \
+-
+-BUILD_TYPE = unittest
+-
+-contains(BUILD_TYPE, skeleton) {
+-    CONFIG += link_pkgconfig
+-    PKGCONFIG += maliit-plugins-quick
+-    target.path += $$system(pkg-config --variable pluginsdir maliit-plugins)
+-    INCLUDEPATH += $$system(pkg-config --cflags maliit-plugins-quick | tr \' \' \'\\n\' | grep ^-I | cut -d I -f 2-)
+-    INSTALLS += target
+-}
+-
+-contains(BUILD_TYPE, unittest) {
+-    # Used for testing purposes, can be deleted when used as a project skeleton
+-    # Build against in-tree libs
+-    TOP_DIR = ../../../..
+-
+-    include($$TOP_DIR/config.pri)
+-
+-    include($$TOP_DIR/common/libmaliit-common.pri)
+-    include($$TOP_DIR/src/libmaliit-plugins.pri)
+-    include($$TOP_DIR/maliit-plugins-quick/libmaliit-plugins-quick.pri)
+-
+-    target.path += $$MALIIT_TEST_PLUGINS_DIR/examples/qml/override
+-    INSTALLS += target
+-}
+-
+-QMAKE_CLEAN += libqmloverrideplugin.so
+diff --git a/examples/plugins/qml/qml.pro b/examples/plugins/qml/qml.pro
+deleted file mode 100644
+index f135c8b..0000000
+--- a/examples/plugins/qml/qml.pro
++++ /dev/null
+@@ -1,2 +0,0 @@
+-TEMPLATE = subdirs
+-SUBDIRS = helloworld #cyclekeys override
+diff --git a/input-context/input-context.pro b/input-context/input-context.pro
+deleted file mode 100644
+index ae79e23..0000000
+--- a/input-context/input-context.pro
++++ /dev/null
+@@ -1,24 +0,0 @@
+-include (../config.pri)
+-
+-TOP_DIR = ..
+-
+-QT += dbus gui-private quick
+-TEMPLATE = lib
+-CONFIG += plugin
+-TARGET = maliitplatforminputcontextplugin
+-
+-target.path = $$[QT_INSTALL_PLUGINS]/platforminputcontexts
+-
+-INSTALLS += target
+-
+-include($$TOP_DIR/common/libmaliit-common.pri)
+-include($$TOP_DIR/connection/libmaliit-connection.pri)
+-
+-SOURCES += $$PWD/main.cpp \
+-           $$PWD/minputcontext.cpp \
+-
+-
+-HEADERS += $$PWD/minputcontext.h \
+-
+-
+-OTHER_FILES += $$PWD/maliit.json
+diff --git a/maliit-framework.pro b/maliit-framework.pro
+deleted file mode 100644
+index f028429..0000000
+--- a/maliit-framework.pro
++++ /dev/null
+@@ -1,90 +0,0 @@
+-include(./config.pri)
+-
+-!isEmpty(HELP) {
+-    # Output help
+-    help_string = \
+-        Important build options: \
+-        \\n\\t PREFIX : Install prefix (default: /usr) \
+-        \\n\\t {BIN,LIB,INCLUDE,DOC}DIR : Install prefix for specific types of files \
+-        \\n\\t MALIIT_DEFAULT_PLUGIN : Default onscreen (virtual) keyboard plugin \
+-        \\n\\t MALIIT_DEFAULT_HW_PLUGIN : Default hardware keyboard plugin \
+-        \\n\\t MALIIT_SERVER_ARGUMENTS : Arguments to use for starting maliit-server by D-Bus activation \
+-        \\nRecognised CONFIG flags: \
+-        \\n\\t nohwkeyboard : Disable the support for the hardware keyboard \
+-        \\n\\t enable-contextkit : Build contextkit support (for monitoring hardware keyboard status) \
+-        \\n\\t enable-dbus-activation : Enable dbus activation support for maliit-server \
+-        \\n\\t notests : Do not build tests \
+-        \\n\\t nodoc : Do not build documentation\
+-        \\n\\t local-install : Install everything underneath PREFIX, nothing to system directories reported by GTK+, Qt, DBus etc. \
+-        \\n\\t glib : Compile GDBus bindings \
+-        \\n\\t wayland : Compile with support for wayland \
+-        \\n\\t qt5-inputcontext : Compile with Qt5 input context, replaces the one currently provided by Qt \
+-        \\n\\t noxcb : Compile without xcb support \
+-        \\nInfluential environment variables: \
+-        \\n\\t PKG_CONFIG_PATH : Override standard directories to look for pkg-config information \
+-        \\nExamples: \
+-        \\n\\t qmake \
+-        \\n\\t qmake PREFIX=/usr LIBDIR=/usr/lib64 CONFIG+=notests \
+-        \\n\\t qmake PREFIX=/usr MALIIT_DEFAULT_PLUGIN=libmykeyboard.so
+-
+-    !build_pass:system(echo -e \"$$help_string\")
+-} else {
+-    config_string = Tip: Run qmake HELP=1 for a list of all supported build options
+-
+-    !build_pass:system(echo -e \"$$config_string\")
+-}
+-
+-CONFIG += ordered
+-TEMPLATE = subdirs
+-
+-contains(QT_MAJOR_VERSION, 4) {
+-    error("Qt 5 is required. For the Qt 4 input context see maliit-inputcontext-qt4. For a Qt 4 Maliit please use the 0.81 or 0.94-qt4 branches/release series instead")
+-}
+-
+-SUBDIRS = common dbus_interfaces
+-
+-wayland {
+-    SUBDIRS += weston-protocols
+-}
+-
+-SUBDIRS += connection
+-
+-glib {
+-    SUBDIRS += maliit-glib
+-}
+-
+-SUBDIRS += src passthroughserver examples
+-
+-qt5-inputcontext {
+-    SUBDIRS += input-context
+-}
+-
+-!nodoc {
+-    SUBDIRS += doc
+-}
+-
+-!notests {
+-    SUBDIRS += tests
+-}
+-
+-QMAKE_EXTRA_TARGETS += check-xml
+-check-xml.target = check-xml
+-check-xml.CONFIG = recursive
+-
+-QMAKE_EXTRA_TARGETS += check
+-check.target = check
+-check.CONFIG = recursive
+-
+-DIST_NAME = $$MALIIT_PACKAGENAME-$$MALIIT_VERSION
+-DIST_PATH = $$OUT_PWD/$$DIST_NAME
+-TARBALL_SUFFIX = .tar.bz2
+-TARBALL_PATH = $$DIST_PATH$$TARBALL_SUFFIX
+-
+-# The 'make dist' target
+-# Creates a tarball
+-QMAKE_EXTRA_TARGETS += release
+-release.target = release
+-release.commands += git archive HEAD --prefix=$$DIST_NAME/ | bzip2 > $$TARBALL_PATH;
+-release.commands += md5sum $$TARBALL_PATH | cut -d \' \' -f 1 > $$DIST_PATH\\.md5
+-
+-OTHER_FILES += NEWS README INSTALL.local
+diff --git a/maliit-glib/libmaliit-glib.pri b/maliit-glib/libmaliit-glib.pri
+deleted file mode 100644
+index 56222d3..0000000
+--- a/maliit-glib/libmaliit-glib.pri
++++ /dev/null
+@@ -1,10 +0,0 @@
+-# Use when a .pro file requires libmaliit-glib
+-# The .pro file must define TOP_DIR to be a relative path
+-# to the top-level source/build directory, and include config.pri
+-
+-LIBS += $$TOP_DIR/lib/$$maliitDynamicLib($${MALIIT_GLIB_LIB})
+-POST_TARGETDEPS += $$TOP_DIR/lib/$$maliitDynamicLib($${MALIIT_GLIB_LIB})
+-INCLUDEPATH += $$TOP_DIR
+-
+-CONFIG += link_pkgconfig
+-PKGCONFIG += glib-2.0 gobject-2.0
+diff --git a/maliit-glib/maliit-glib.pc.in b/maliit-glib/maliit-glib.pc.in
+index f67bf7d..11019db 100644
+--- a/maliit-glib/maliit-glib.pc.in
++++ b/maliit-glib/maliit-glib.pc.in
+@@ -1,11 +1,11 @@
+-prefix=@PREFIX@
+-exec_prefix=@PREFIX@
+-libdir=@LIBDIR@
+-includedir=@INCLUDEDIR@
++prefix=@CMAKE_INSTALL_PREFIX@
++exec_prefix=@CMAKE_INSTALL_PREFIX@
++libdir=@LIB_INSTALL_DIR@
++includedir=@INCLUDE_INSTALL_DIR@
+ 
+ Name: Maliit-GLib
+ Description: Maliit provides a flexible and cross platform input method framework. It is usable on all MeeGo user experiences, and in other GNU/Linux distributions as well.
+-Version: @MALIIT_VERSION@
++Version: @PROJECT_VERSION@
+ Requires: gobject-2.0 gio-2.0
+-Cflags: -I${includedir}/@MALIIT_HEADER@
+-Libs: -L${libdir} -l@MALIIT_GLIB_LIB@
++Cflags: -I${includedir}/maliit
++Libs: -L${libdir} -lmaliit-glib
+diff --git a/maliit-glib/maliit-glib.pro b/maliit-glib/maliit-glib.pro
+deleted file mode 100644
+index c4667de..0000000
+--- a/maliit-glib/maliit-glib.pro
++++ /dev/null
+@@ -1,118 +0,0 @@
+-TOP_DIR = ..
+-
+-include(../config.pri)
+-
+-VERSION = $$MALIIT_ABI_VERSION
+-TEMPLATE = lib
+-TARGET = $$TOP_DIR/lib/$${MALIIT_GLIB_LIB}
+-
+-CONFIG += link_pkgconfig
+-PKGCONFIG += glib-2.0 gobject-2.0 gio-2.0 gio-unix-2.0
+-
+-CONFIG -= qt
+-
+-QMAKE_CXXFLAGS_DEBUG+=-Wno-error=deprecated-declarations
+-QMAKE_CFLAGS_DEBUG+=-Wno-error=deprecated-declarations
+-
+-HEADERSINSTALL += \
+-    maliitattributeextension.h \
+-    maliitattributeextensionregistry.h \
+-    maliitinputmethod.h \
+-    maliitsettingsmanager.h \
+-    maliitsettingsentry.h \
+-    maliitpluginsettings.h \
+-    maliitsettingdata.h \
+-    maliitbus.h \
+-    maliitserver.h \
+-    maliitcontext.h \
+-
+-HEADERS += \
+-    $$HEADERSINSTALL \
+-    maliitattributeextensionprivate.h \
+-    maliitmarshallers.h \
+-    maliitpluginsettingsprivate.h \
+-    maliitsettingsentryprivate.h \
+-
+-SOURCES += \
+-    maliitattributeextension.c \
+-    maliitattributeextensionregistry.c \
+-    maliitinputmethod.c \
+-    maliitsettingsmanager.c \
+-    maliitsettingsentry.c \
+-    maliitpluginsettings.c \
+-    maliitsettingdata.c \
+-    maliitbus.c \
+-    maliitserver.c \
+-    maliitcontext.c \
+-
+-target.path += $$LIBDIR
+-
+-headers.path += $$INCLUDEDIR/$$MALIIT_HEADER/maliit-glib
+-headers.files += $$HEADERSINSTALL
+-
+-outputFiles(maliit-glib.pc)
+-
+-OTHER_FILES += \
+-    maliit-glib.pc.in
+-
+-install_pkgconfig.path = $${LIBDIR}/pkgconfig
+-install_pkgconfig.files = $$OUT_PWD/maliit-glib.pc
+-
+-INSTALLS += \
+-    target \
+-    headers \
+-    install_pkgconfig \
+-
+-# coverage flags are off per default, but can be turned on via qmake COV_OPTION=on
+-for(OPTION,$$list($$lower($$COV_OPTION))){
+-    isEqual(OPTION, on){
+-        QMAKE_CFLAGS += -ftest-coverage -fprofile-arcs -fno-elide-constructors
+-        LIBS += -lgcov
+-    }
+-}
+-
+-QMAKE_CLEAN += \
+-    $$OBJECTS_DIR/*.gcno \
+-    $$OBJECTS_DIR/*.gcda \
+-    maliitmarshallers.h \
+-    maliitmarshallers.c
+-
+-OTHER_FILES += \
+-    libmaliit-glib.pri
+-
+-# generate marshallers
+-GLIB_GENMARSHAL_LIST += maliitmarshallers.list
+-
+-OTHER_FILES += maliitmarshallers.list
+-
+-glib_genmarshal_header.name = glib-genmarshal header ${QMAKE_FILE_IN}
+-glib_genmarshal_header.commands = glib-genmarshal --prefix=maliit_marshal --header --g-fatal-warnings ${QMAKE_FILE_IN} > ${QMAKE_FILE_OUT}
+-glib_genmarshal_header.output = ${QMAKE_FILE_IN_BASE}.h
+-glib_genmarshal_header.variable_out = HEADERS
+-glib_genmarshal_header.input = GLIB_GENMARSHAL_LIST
+-
+-glib_genmarshal_source.name = glib-genmarshal source ${QMAKE_FILE_IN}
+-glib_genmarshal_source.commands = glib-genmarshal --prefix=maliit_marshal --body --g-fatal-warnings ${QMAKE_FILE_IN} > ${QMAKE_FILE_OUT}
+-glib_genmarshal_source.output = ${QMAKE_FILE_IN_BASE}.c
+-glib_genmarshal_source.variable_out = SOURCES
+-glib_genmarshal_source.input = GLIB_GENMARSHAL_LIST
+-
+-QMAKE_EXTRA_COMPILERS += glib_genmarshal_header glib_genmarshal_source
+-
+-include($$TOP_DIR/dbus_interfaces/dbus_interfaces.pri)
+-
+-PRE_TARGETDEPS += glib_server glib_context
+-QMAKE_EXTRA_TARGETS += glib_server glib_context
+-
+-glib_server.commands = gdbus-codegen --interface-prefix com.meego \
+-                                     --generate-c-code $$TOP_DIR/maliit-glib/maliitserver \
+-                                     --c-namespace Maliit \
+-                                     --annotate com.meego.inputmethod.uiserver1 org.gtk.GDBus.C.Name Server \
+-                                     $$DBUS_SERVER_XML
+-
+-glib_context.commands = gdbus-codegen --interface-prefix com.meego \
+-                                      --generate-c-code $$TOP_DIR/maliit-glib/maliitcontext \
+-                                      --c-namespace Maliit \
+-                                      --annotate com.meego.inputmethod.inputcontext1 org.gtk.GDBus.C.Name Context \
+-                                      $$DBUS_CONTEXT_XML
+-
+diff --git a/maliit-glib/maliitbus.h b/maliit-glib/maliitbus.h
+index 17705c9..508a690 100644
+--- a/maliit-glib/maliitbus.h
++++ b/maliit-glib/maliitbus.h
+@@ -25,8 +25,8 @@
+ 
+ #include <gio/gio.h>
+ 
+-#include "maliitserver.h"
+-#include "maliitcontext.h"
++#include <maliit-glib/maliitserver.h>
++#include <maliit-glib/maliitcontext.h>
+ 
+ G_BEGIN_DECLS
+ 
+diff --git a/passthroughserver/.gitignore b/passthroughserver/.gitignore
+index f968ce6..29b8032 100644
+--- a/passthroughserver/.gitignore
++++ b/passthroughserver/.gitignore
+@@ -1,2 +1 @@
+-meego-im-uiserver
+ maliit-server
+diff --git a/passthroughserver/devices.txt b/passthroughserver/devices.txt
+deleted file mode 100644
+index de33e7d..0000000
+--- a/passthroughserver/devices.txt
++++ /dev/null
+@@ -1,3 +0,0 @@
+-touch /dev/input/event2 0 2774 0 1568 0 1
+-touch /dev/input/event3 0 2774 0 1568 0 1
+-
+diff --git a/passthroughserver/passthroughserver.pro b/passthroughserver/passthroughserver.pro
+deleted file mode 100644
+index 373a4ce..0000000
+--- a/passthroughserver/passthroughserver.pro
++++ /dev/null
+@@ -1,36 +0,0 @@
+-include(../config.pri)
+-
+-TOP_DIR = ..
+-
+-TEMPLATE = app
+-TARGET = $$MALIIT_SERVER
+-target.path = $$BINDIR
+-DEPENDPATH += .
+-
+-include($$TOP_DIR/src/libmaliit-plugins.pri)
+-include($$TOP_DIR/common/libmaliit-common.pri)
+-include($$TOP_DIR/connection/libmaliit-connection.pri)
+-
+-SOURCES += main.cpp
+-
+-QT += core gui
+-
+-# coverage flags are off per default, but can be turned on via qmake COV_OPTION=on
+-for(OPTION,$$list($$lower($$COV_OPTION))){
+-    isEqual(OPTION, on){
+-        QMAKE_CXXFLAGS += -ftest-coverage -fprofile-arcs -fno-elide-constructors
+-        LIBS += -lgcov
+-    }
+-}
+-
+-QMAKE_CLEAN += *.gcno *.gcda
+-
+-INSTALLS += target
+-
+-QMAKE_EXTRA_TARGETS += check-xml
+-check-xml.target = check-xml
+-check-xml.depends += $$TARGET
+-
+-QMAKE_EXTRA_TARGETS += check
+-check.target = check
+-check.depends += $$TARGET
+diff --git a/src/.gitignore b/src/.gitignore
+index d790512..5d5d1c6 100644
+--- a/src/.gitignore
++++ b/src/.gitignore
+@@ -1,7 +1,2 @@
+-meegoimframework.prf
+-MeegoImFramework.pc
+-meego-im-framework.schemas
+-maliit-framework.schemas
+-maliit*-*.pc
+-config.h
+-*.prf
++maliit-*.pc
++maliit-*.prf
+diff --git a/src/README b/src/README
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/src/config.h.in b/src/config.h.in
+deleted file mode 100644
+index 0f9918b..0000000
+--- a/src/config.h.in
++++ /dev/null
+@@ -1,25 +0,0 @@
+-/* * This file is part of meego-im-framework *
+- *
+- * Copyright (C) 2012 Nokia Corporation and/or its subsidiary(-ies).
+- * All rights reserved.
+- * Contact: Nokia Corporation (directui@nokia.com)
+- *
+- * If you have questions regarding the use of this file, please contact
+- * Nokia at directui@nokia.com.
+- *
+- * This library is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU Lesser General Public
+- * License version 2.1 as published by the Free Software Foundation
+- * and appearing in the file LICENSE.LGPL included in the packaging
+- * of this file.
+- */
+-
+-#ifndef MALIIT_CONFIG_H
+-#define MALIIT_CONFIG_H
+-
+-#define MALIIT_DEFAULT_HW_PLUGIN "@MALIIT_DEFAULT_HW_PLUGIN@"
+-#define MALIIT_ENABLE_MULTITOUCH @MALIIT_ENABLE_MULTITOUCH@
+-#define MALIIT_DEFAULT_PLUGIN "@MALIIT_DEFAULT_PLUGIN@"
+-#define MALIIT_DEFAULT_SUBVIEW "@MALIIT_DEFAULT_SUBVIEW@"
+-
+-#endif
+\ No newline at end of file
+diff --git a/src/libmaliit-plugins.pri b/src/libmaliit-plugins.pri
+deleted file mode 100644
+index b426851..0000000
+--- a/src/libmaliit-plugins.pri
++++ /dev/null
+@@ -1,7 +0,0 @@
+-# Use when a .pro file requires libmaliit-plugins
+-# The .pro file must define TOP_DIR to be a relative path
+-# to the top-level source/build directory, and include config.pri
+-
+-INCLUDEPATH += $$TOP_DIR/src $$OUT_PWD/$$TOP_DIR/src
+-LIBS += $$TOP_DIR/lib/$$maliitDynamicLib($${MALIIT_PLUGINS_LIB})
+-POST_TARGETDEPS += $$TOP_DIR/lib/$$maliitDynamicLib($${MALIIT_PLUGINS_LIB})
+diff --git a/src/maliit-defines.prf.in b/src/maliit-defines.prf.in
+index 2261bc1..a513416 100644
+--- a/src/maliit-defines.prf.in
++++ b/src/maliit-defines.prf.in
+@@ -1,7 +1,7 @@
+ # This fime contains macro definitions that might be needed for plugins.
+ # It is made separated, so one can load it eagerly with load() function
+ # without risk to affect building part.
+-MALIIT_PREFIX=@PREFIX@
+-MALIIT_PLUGINS_DIR = @MALIIT_PLUGINS_DIR@
+-MALIIT_PLUGINS_DATA_DIR = @MALIIT_PLUGINS_DATA_DIR@
+-MALIIT_INSTALL_LIBS = @LIBDIR@
++MALIIT_PREFIX=@CMAKE_INSTALL_PREFIX@
++MALIIT_PLUGINS_DIR = @LIB_INSTALL_DIR@/maliit/plugins
++MALIIT_PLUGINS_DATA_DIR = @SHARE_INSTALL_PREFIX@/maliit/plugins
++MALIIT_INSTALL_LIBS = @LIB_INSTALL_DIR@
+diff --git a/src/maliit-plugins.pc.in b/src/maliit-plugins.pc.in
+index a90a9b5..46fdf9c 100644
+--- a/src/maliit-plugins.pc.in
++++ b/src/maliit-plugins.pc.in
+@@ -1,15 +1,16 @@
+-prefix=@PREFIX@
+-exec_prefix=@PREFIX@
+-libdir=@LIBDIR@
+-includedir=@INCLUDEDIR@
+-pluginsdir=@MALIIT_PLUGINS_DIR@
+-pluginsdatadir=@MALIIT_PLUGINS_DATA_DIR@
+-factorypluginsdir=@MALIIT_FACTORY_PLUGINS_DIR@
++prefix=@CMAKE_INSTALL_PREFIX@
++exec_prefix=@CMAKE_INSTALL_PREFIX@
++libdir=@LIB_INSTALL_DIR@
++includedir=@INCLUDE_INSTALL_DIR@
++datarootdir=@SHARE_INSTALL_PREFIX@
++
++pluginsdir=${libdir}/maliit/plugins
++datadir=${datarootdir}
++pluginsdatadir=${datadir}/maliit/plugins
+ 
+ Name: Maliit Plugins
+ Description: Maliit provides a flexible and cross platform input method framework. It is usable on all MeeGo user experiences, and in other GNU/Linux distributions as well.
+-Version: @MALIIT_VERSION@
++Version: @PROJECT_VERSION@
+ Requires: maliit-framework
+-Cflags: -I${includedir}/@MALIIT_PLUGINS_HEADER@
+-Libs: -L${libdir} -l@MALIIT_PLUGINS_LIB@
+-
++Cflags: -I${includedir}/maliit/plugins
++Libs: -L${libdir} -lmaliit-plugins
+diff --git a/src/maliit-plugins.prf.in b/src/maliit-plugins.prf.in
+index 220b6c4..415c358 100644
+--- a/src/maliit-plugins.prf.in
++++ b/src/maliit-plugins.prf.in
+@@ -1,3 +1,3 @@
+-LIBS *= -L@LIBDIR@ -l@MALIIT_PLUGINS_LIB@
+-INCLUDEPATH *= @INCLUDEDIR@/@MALIIT_PLUGINS_HEADER@
++LIBS *= -L@LIB_INSTALL_DIR@ -lmaliit-plugins
++INCLUDEPATH *= @INCLUDE_INSTALL_DIR@/maliit/plugins
+ CONFIG *= maliit-framework
+diff --git a/src/maliit-server.pc.in b/src/maliit-server.pc.in
+index a587c6e..866078c 100644
+--- a/src/maliit-server.pc.in
++++ b/src/maliit-server.pc.in
+@@ -1,15 +1,17 @@
+-prefix=@PREFIX@
+-exec_prefix=@PREFIX@
+-libdir=@LIBDIR@
+-includedir=@INCLUDEDIR@
+-pluginsdir=@MALIIT_PLUGINS_DIR@
+-pluginsdatadir=@MALIIT_PLUGINS_DATA_DIR@
+-factorypluginsdir=@MALIIT_FACTORY_PLUGINS_DIR@
++prefix=@CMAKE_INSTALL_PREFIX@
++exec_prefix=@CMAKE_INSTALL_PREFIX@
++libdir=@LIB_INSTALL_DIR@
++includedir=@INCLUDE_INSTALL_DIR@
++datarootdir=@SHARE_INSTALL_PREFIX@
++
++pluginsdir=${libdir}/maliit/plugins
++datadir=${datarootdir}
++pluginsdatadir=${datadir}/maliit/plugins
+ 
+ Name: Maliit Server
+ Description: Library for embedding the Maliit IM Server
+-Version: @MALIIT_VERSION@
+-Requires: maliit-framework maliit-plugins maliit-connection
+-Cflags: -I${includedir}/@MALIIT_SERVER_HEADER@
++Version: @PROJECT_VERSION@
++Requires: maliit-framework maliit-plugins
++Cflags: -I${includedir}/maliit/server
+ Libs: -L${libdir}
+ 
+diff --git a/src/mimonscreenplugins.cpp b/src/mimonscreenplugins.cpp
+index da6e937..986bd71 100644
+--- a/src/mimonscreenplugins.cpp
++++ b/src/mimonscreenplugins.cpp
+@@ -13,7 +13,6 @@
+  */
+ 
+ #include "mimonscreenplugins.h"
+-#include "config.h"
+ 
+ #include <QLocale>
+ #include <QString>
+diff --git a/src/mimsettings.cpp b/src/mimsettings.cpp
+index 819531c..844e2fc 100644
+--- a/src/mimsettings.cpp
++++ b/src/mimsettings.cpp
+@@ -14,7 +14,6 @@
+ 
+ #include "mimsettings.h"
+ #include "mimsettingsqsettings.h"
+-#include "config.h"
+ 
+ #include <QString>
+ #include <QStringList>
+diff --git a/src/src.pro b/src/src.pro
+deleted file mode 100644
+index 57dd09c..0000000
+--- a/src/src.pro
++++ /dev/null
+@@ -1,193 +0,0 @@
+-include(../config.pri)
+-
+-TOP_DIR = ..
+-
+-VERSION = $$MALIIT_ABI_VERSION
+-TEMPLATE = lib
+-TARGET = $$TOP_DIR/lib/$$MALIIT_PLUGINS_LIB
+-
+-# Input
+-PLUGIN_HEADERS_PUBLIC = \
+-        maliit/plugins/inputmethodplugin.h \
+-        maliit/plugins/abstractinputmethod.h \
+-        maliit/plugins/abstractinputmethodhost.h \
+-        maliit/plugins/keyoverride.h \
+-        maliit/plugins/keyoverridedata.h \
+-        maliit/plugins/attributeextension.h \
+-        maliit/plugins/extensionevent.h \
+-        maliit/plugins/updateevent.h \
+-        maliit/plugins/updatereceiver.h \
+-        maliit/plugins/plugindescription.h \
+-        maliit/plugins/subviewdescription.h \
+-        maliit/plugins/abstractpluginsetting.h \
+-
+-PLUGIN_SOURCES += \
+-        maliit/plugins/abstractinputmethod.cpp \
+-        maliit/plugins/abstractinputmethodhost.cpp \
+-        maliit/plugins/keyoverride.cpp \
+-        maliit/plugins/keyoverridedata.cpp \
+-        maliit/plugins/attributeextension.cpp \
+-        maliit/plugins/extensionevent.cpp \
+-        maliit/plugins/updateevent.cpp \
+-        maliit/plugins/updatereceiver.cpp \
+-        maliit/plugins/plugindescription.cpp \
+-        maliit/plugins/subviewdescription.cpp \
+-
+-PLUGIN_HEADERS_PRIVATE += \
+-        maliit/plugins/keyoverride_p.h \
+-        maliit/plugins/attributeextension_p.h \
+-        maliit/plugins/extensionevent_p.h \
+-        maliit/plugins/updateevent_p.h \
+-
+-SERVER_HEADERS_PUBLIC += \
+-        mimserver.h \
+-
+-SERVER_SOURCES += \
+-        mimserver.cpp \
+-
+-SERVER_HEADERS_PRIVATE += \
+-        mimpluginmanager.h \
+-        mimpluginmanager_p.h \
+-        minputmethodhost.h \
+-        mattributeextensionid.h \
+-        mattributeextensionmanager.h \
+-        msharedattributeextensionmanager.h \
+-        mimhwkeyboardtracker.h \
+-        mimonscreenplugins.h \
+-        mimsubviewoverride.h \
+-        mimserveroptions.h \
+-        windowgroup.h \
+-        windowdata.h \
+-        abstractplatform.h \
+-        unknownplatform.h \
+-
+-SERVER_SOURCES += \
+-        mimpluginmanager.cpp \
+-        minputmethodhost.cpp \
+-        mattributeextensionid.cpp \
+-        mattributeextensionmanager.cpp \
+-        msharedattributeextensionmanager.cpp \
+-        mimonscreenplugins.cpp \
+-        mimsubviewoverride.cpp \
+-        mimserveroptions.cpp \
+-        windowgroup.cpp \
+-        windowdata.cpp \
+-        abstractplatform.cpp \
+-        unknownplatform.cpp \
+-
+-!noxcb {
+-    SERVER_HEADERS_PRIVATE += xcbplatform.h
+-    SERVER_SOURCES += xcbplatform.cpp
+-    PKGCONFIG += xcb xcb-xfixes
+-}
+-
+-wayland {
+-    SERVER_HEADERS_PRIVATE += waylandplatform.h
+-    SERVER_SOURCES += waylandplatform.cpp
+-}
+-
+-SETTINGS_HEADERS_PRIVATE += \
+-        mimsettingsqsettings.h \
+-        mimsettings.h \
+-
+-SETTINGS_SOURCES += \
+-        mimsettings.cpp \
+-        mimsettingsqsettings.cpp \
+-
+-QUICK_HEADERS_PRIVATE += \
+-        quick/maliitquick.h \
+-        quick/inputmethodquick.h \
+-        quick/inputmethodquickplugin.h \
+-        quick/keyoverridequick.h \
+-        quick/keyoverridequick_p.h \
+-
+-QUICK_SOURCES += \
+-        quick/inputmethodquick.cpp \
+-        quick/inputmethodquickplugin.cpp \
+-        quick/keyoverridequick.cpp \
+-
+-!nohwkeyboard {
+-    SERVER_HEADERS_PRIVATE += mimhwkeyboardtracker_p.h
+-    SERVER_SOURCES += mimhwkeyboardtracker.cpp
+-
+-    enable-contextkit {
+-        PKGCONFIG += contextsubscriber-1.0
+-        DEFINES += HAVE_CONTEXTSUBSCRIBER
+-    } else {
+-        # libudev needed by non-contextkit MImHwKeyboardTracker
+-        PKGCONFIG += libudev
+-    }
+-} else {
+-    SERVER_SOURCES += mimhwkeyboardtracker_stub.cpp
+-}
+-
+-HEADERS += \
+-        $$PLUGIN_HEADERS_PUBLIC \
+-        $$PLUGIN_HEADERS_PRIVATE \
+-        $$SERVER_HEADERS_PUBLIC \
+-        $$SERVER_HEADERS_PRIVATE \
+-        $$SETTINGS_HEADERS_PRIVATE \
+-        $$QUICK_HEADERS_PRIVATE
+-
+-SOURCES += \
+-        $$PLUGIN_SOURCES \
+-        $$SERVER_SOURCES \
+-        $$SETTINGS_SOURCES \
+-        $$QUICK_SOURCES
+-
+-CONFIG += link_pkgconfig
+-QT = core gui gui-private dbus qml quick
+-
+-
+-# coverage flags are off per default, but can be turned on via qmake COV_OPTION=on
+-for(OPTION,$$list($$lower($$COV_OPTION))){
+-    isEqual(OPTION, on){
+-        QMAKE_CXXFLAGS += -ftest-coverage -fprofile-arcs -fno-elide-constructors
+-        LIBS += -lgcov
+-    }
+-}
+-
+-OBJECTS_DIR = .obj
+-MOC_DIR = .moc
+-
+-QMAKE_CLEAN += $$OBJECTS_DIR/*.gcno $$OBJECTS_DIR/*.gcda
+-
+-target.path += $$LIBDIR
+-
+-plugins_headers.path += $$INCLUDEDIR/$$MALIIT_PLUGINS_HEADER/maliit/plugins
+-plugins_headers.files += $$PLUGIN_HEADERS_PUBLIC
+-
+-server_headers.path += $$INCLUDEDIR/$$MALIIT_SERVER_HEADER
+-server_headers.files += $$SERVER_HEADERS_PUBLIC
+-
+-OTHER_FILES += \
+-    maliit-server.pc.in \
+-    maliit-plugins.pc.in \
+-    libmaliit-plugins.pri
+-
+-OTHER_FILES += \
+-    config.h.in \
+-    maliit-plugins.prf.in \
+-    maliit-defines.prf.in \
+-
+-outputFiles(config.h maliit-defines.prf maliit-plugins.prf maliit-plugins.pc maliit-server.pc)
+-
+-install_pkgconfig.path = $${LIBDIR}/pkgconfig
+-install_pkgconfig.files += \
+-    $$OUT_PWD/MeegoImFramework.pc \
+-    $$OUT_PWD/maliit-plugins.pc \
+-    $$OUT_PWD/maliit-server.pc \
+-
+-install_prf.path = $$MALIIT_INSTALL_PRF
+-install_prf.files = $$OUT_PWD/maliit-plugins.prf $$OUT_PWD/maliit-defines.prf
+-
+-INSTALLS += \
+-    target \
+-    plugins_headers \
+-    server_headers \
+-    install_prf \
+-    install_pkgconfig \
+-
+-include($$TOP_DIR/weston-protocols/libmaliit-weston-protocols.pri)
+-include($$TOP_DIR/connection/libmaliit-connection.pri)
+-include($$TOP_DIR/common/libmaliit-common.pri)
+diff --git a/tests/.gitignore b/tests/.gitignore
+deleted file mode 100644
+index 704444a..0000000
+--- a/tests/.gitignore
++++ /dev/null
+@@ -1,4 +0,0 @@
+-*.log.xml
+-tests.xml
+-gen-tests-xml.sh
+-runtests.sh
+diff --git a/tests/common_check.pri b/tests/common_check.pri
+deleted file mode 100644
+index dfcee38..0000000
+--- a/tests/common_check.pri
++++ /dev/null
+@@ -1,32 +0,0 @@
+-contains(QT_MAJOR_VERSION, 4) {
+-    unittest_arguments += -graphicssystem raster
+-}
+-
+-qws {
+-    unittest_arguments += -qws
+-}
+-
+-QMAKE_EXTRA_TARGETS += check
+-check.target = check
+-check.commands = \
+-    TESTING_IN_SANDBOX=1 \
+-    TESTPLUGIN_PATH=../plugins \
+-    TESTDATA_PATH=$$PWD \
+-    LD_LIBRARY_PATH=../../lib:../../lib/plugins:../plugins:$(LD_LIBRARY_PATH) \
+-    ./$$TARGET $$unittest_arguments
+-
+-check.depends += $$TARGET
+-
+-QMAKE_EXTRA_TARGETS += check-xml
+-check-xml.target = check-xml
+-check-xml.commands = ../rt.sh $$TARGET
+-check-xml.depends += $$TARGET
+-
+-# coverage flags are off per default, but can be turned on via qmake COV_OPTION=on
+-for(OPTION,$$list($$lower($$COV_OPTION))){
+-    isEqual(OPTION, on){
+-        QMAKE_CXXFLAGS += -ftest-coverage -fprofile-arcs
+-        LIBS += -lgcov
+-    }
+-}
+-QMAKE_CLEAN += $$OBJECTS_DIR/*.gcno $$OBJECTS_DIR/*.gcda
+diff --git a/tests/common_top.pri b/tests/common_top.pri
+deleted file mode 100644
+index 74d5699..0000000
+--- a/tests/common_top.pri
++++ /dev/null
+@@ -1,38 +0,0 @@
+-include(../config.pri)
+-
+-OBJECTS_DIR = .obj
+-MOC_DIR = .moc
+-UTILS_DIR = ../utils
+-
+-QT = core testlib
+-
+-QMAKE_CLEAN += *.log *~
+-
+-target.path = $$MALIIT_TEST_LIBDIR/$$TARGET
+-INSTALLS += target
+-
+-DEFINES += MALIIT_TEST_DATA_PATH=\\\"$$MALIIT_TEST_LIBDIR\\\"
+-
+-TOP_DIR = ../..
+-SRC_DIR = $$TOP_DIR/src
+-
+-INCLUDEPATH += . \
+-               $$TOP_DIR \
+-               $$SRC_DIR \
+-               $$TOP_DIR/common \
+-               $$TOP_DIR/connection \
+-               $$UTILS_DIR \
+-
+-HEADERS += \
+-           $$UTILS_DIR/core-utils.h \
+-
+-SOURCES += \
+-           $$UTILS_DIR/core-utils.cpp \
+-
+-
+-code_coverage_option=off
+-for(OPTION,$$list($$lower($$COV_OPTION))){
+-    isEqual(OPTION, on){
+-        code_coverage_option=on
+-    }
+-}
+diff --git a/tests/dummyimplugin/dummyimplugin.pro b/tests/dummyimplugin/dummyimplugin.pro
+deleted file mode 100644
+index 0892a73..0000000
+--- a/tests/dummyimplugin/dummyimplugin.pro
++++ /dev/null
+@@ -1,45 +0,0 @@
+-include(../../config.pri)
+-
+-TOP_DIR = ../..
+-
+-TEMPLATE = lib
+-TARGET = ../plugins/dummyimplugin
+-DEPENDPATH += .
+-
+-include($$TOP_DIR/common/libmaliit-common.pri)
+-include($$TOP_DIR/src/libmaliit-plugins.pri)
+-
+-CONFIG += plugin
+-
+-HEADERS += \
+-    dummyimplugin.h \
+-    dummyinputmethod.h \
+-
+-SOURCES += \
+-    dummyimplugin.cpp \
+-    dummyinputmethod.cpp \
+-
+-OTHER_FILES += \
+-    dummyimplugin.json \
+-
+-target.path += $$MALIIT_TEST_LIBDIR/plugins
+-
+-INVALIDPLUGINS = ../plugins/libinvalidplugin.so
+-invalidplugins.path = $$MALIIT_TEST_LIBDIR/plugins
+-invalidplugins.files = $$INVALIDPLUGINS
+-
+-INSTALLS += target invalidplugins
+-
+-QMAKE_CLEAN += ../plugins/libdummyimplugin.so
+-
+-QMAKE_EXTRA_TARGETS += check
+-check.target = check
+-check.command = $$system(true)
+-
+-QMAKE_EXTRA_TARGETS += check-xml
+-check-xml.target = check-xml
+-check-xml.command = $$system(true)
+-
+-QMAKE_EXTRA_TARGETS += memcheck
+-memcheck.target = memcheck
+-memcheck.command = $$system(true)
+diff --git a/tests/dummyimplugin2/dummyimplugin2.pro b/tests/dummyimplugin2/dummyimplugin2.pro
+deleted file mode 100644
+index 38d817a..0000000
+--- a/tests/dummyimplugin2/dummyimplugin2.pro
++++ /dev/null
+@@ -1,34 +0,0 @@
+-include(../../config.pri)
+-
+-TOP_DIR = ../..
+-
+-TEMPLATE = lib
+-TARGET = ../plugins/dummyimplugin2
+-DEPENDPATH += .
+-
+-include($$TOP_DIR/common/libmaliit-common.pri)
+-include($$TOP_DIR/src/libmaliit-plugins.pri)
+-
+-CONFIG += plugin
+-
+-HEADERS += dummyimplugin2.h
+-SOURCES += dummyimplugin2.cpp
+-OTHER_FILES += dummyimplugin2.json
+-
+-target.path += $$MALIIT_TEST_LIBDIR/plugins
+-
+-INSTALLS += target
+-
+-QMAKE_CLEAN += ../plugins/libdummyimplugin2.so
+-
+-QMAKE_EXTRA_TARGETS += check
+-check.target = check
+-check.command = $$system(true)
+-
+-QMAKE_EXTRA_TARGETS += check-xml
+-check-xml.target = check-xml
+-check-xml.command = $$system(true)
+-
+-QMAKE_EXTRA_TARGETS += memcheck
+-memcheck.target = memcheck
+-memcheck.command = $$system(true)
+diff --git a/tests/dummyimplugin3/dummyimplugin3.pro b/tests/dummyimplugin3/dummyimplugin3.pro
+deleted file mode 100644
+index 7c24fed..0000000
+--- a/tests/dummyimplugin3/dummyimplugin3.pro
++++ /dev/null
+@@ -1,41 +0,0 @@
+-include(../../config.pri)
+-
+-TOP_DIR = ../..
+-
+-TEMPLATE = lib
+-TARGET = ../plugins/dummyimplugin3
+-DEPENDPATH += .
+-
+-include($$TOP_DIR/common/libmaliit-common.pri)
+-include($$TOP_DIR/src/libmaliit-plugins.pri)
+-
+-CONFIG += plugin
+-
+-HEADERS += \
+-    dummyimplugin3.h \
+-    dummyinputmethod3.h \
+-
+-SOURCES += \
+-    dummyimplugin3.cpp \
+-    dummyinputmethod3.cpp \
+-
+-OTHER_FILES += \
+-    dummyimplugin3.json \
+-
+-target.path += $$MALIIT_TEST_LIBDIR/plugins
+-
+-INSTALLS += target
+-
+-QMAKE_CLEAN += ../plugins/libdummyimplugin3.so
+-
+-QMAKE_EXTRA_TARGETS += check
+-check.target = check
+-check.command = $$system(true)
+-
+-QMAKE_EXTRA_TARGETS += check-xml
+-check-xml.target = check-xml
+-check-xml.command = $$system(true)
+-
+-QMAKE_EXTRA_TARGETS += memcheck
+-memcheck.target = memcheck
+-memcheck.command = $$system(true)
+diff --git a/tests/dummyimplugins.pri b/tests/dummyimplugins.pri
+deleted file mode 100644
+index 51d2fbd..0000000
+--- a/tests/dummyimplugins.pri
++++ /dev/null
+@@ -1,11 +0,0 @@
+-
+-LIBS += \
+-    -L$$TOP_DIR/tests/plugins \
+-    -ldummyimplugin \
+-    -ldummyimplugin2 \
+-    -ldummyimplugin3 \
+-
+-INCLUDEPATH += \
+-    $$TOP_DIR/tests/dummyimplugin \
+-    $$TOP_DIR/tests/dummyimplugin2 \
+-    $$TOP_DIR/tests/dummyimplugin3 \
+diff --git a/tests/dummyplugin/dummyplugin.pro b/tests/dummyplugin/dummyplugin.pro
+deleted file mode 100644
+index f0dcd9e..0000000
+--- a/tests/dummyplugin/dummyplugin.pro
++++ /dev/null
+@@ -1,34 +0,0 @@
+-include(../../config.pri)
+-
+-TOP_DIR = ../..
+-
+-TEMPLATE = lib
+-TARGET = ../plugins/dummyplugin
+-DEPENDPATH += .
+-
+-include($$TOP_DIR/common/libmaliit-common.pri)
+-include($$TOP_DIR/src/libmaliit-plugins.pri)
+-
+-CONFIG += plugin
+-
+-HEADERS += dummyplugin.h
+-SOURCES += dummyplugin.cpp
+-OTHER_FILES += dummyplugin.json
+-
+-target.path += $$MALIIT_TEST_LIBDIR/plugins
+-
+-INSTALLS += target
+-
+-QMAKE_CLEAN += ../plugins/libdummyplugin.so
+-
+-QMAKE_EXTRA_TARGETS += check
+-check.target = check
+-check.command = $$system(true)
+-
+-QMAKE_EXTRA_TARGETS += check-xml
+-check-xml.target = check-xml
+-check-xml.command = $$system(true)
+-
+-QMAKE_EXTRA_TARGETS += memcheck
+-memcheck.target = memcheck
+-memcheck.command = $$system(true)
+diff --git a/tests/ft_exampleplugin/ft_exampleplugin.pro b/tests/ft_exampleplugin/ft_exampleplugin.pro
+deleted file mode 100644
+index bd4746d..0000000
+--- a/tests/ft_exampleplugin/ft_exampleplugin.pro
++++ /dev/null
+@@ -1,20 +0,0 @@
+-include(../common_top.pri)
+-
+-IN_TREE_TEST_PLUGIN_DIR = $$OUT_PWD/../../examples/plugins
+-DEFINES += IN_TREE_TEST_PLUGIN_DIR=\\\"$${IN_TREE_TEST_PLUGIN_DIR}\\\"
+-
+-QT += gui
+-
+-include(../../src/libmaliit-plugins.pri)
+-
+-# For MImInputContextConnection pulled in by TestInputMethodHost
+-include(../../connection/libmaliit-connection.pri)
+-
+-# Input
+-HEADERS += \
+-    ft_exampleplugin.h \
+-
+-SOURCES += \
+-    ft_exampleplugin.cpp \
+-
+-include(../common_check.pri)
+diff --git a/tests/ft_mimpluginmanager/ft_mimpluginmanager.pro b/tests/ft_mimpluginmanager/ft_mimpluginmanager.pro
+deleted file mode 100644
+index 32d1648..0000000
+--- a/tests/ft_mimpluginmanager/ft_mimpluginmanager.pro
++++ /dev/null
+@@ -1,25 +0,0 @@
+-include(../common_top.pri)
+-
+-QT += gui
+-
+-INCLUDEPATH +=  \
+-    ../stubs
+-
+-# Input
+-HEADERS += \
+-    ft_mimpluginmanager.h \
+-    ../stubs/mkeyboardstatetracker_stub.h \
+-    ../stubs/fakeproperty.h \
+-
+-SOURCES += \
+-    ft_mimpluginmanager.cpp \
+-    ../stubs/fakeproperty.cpp \
+-
+-include($$TOP_DIR/src/libmaliit-plugins.pri)
+-
+-# For MImInputContextConnection pulled in by TestInputMethodHost
+-include($$TOP_DIR/connection/libmaliit-connection.pri)
+-
+-include(../dummyimplugins.pri)
+-
+-include(../common_check.pri)
+diff --git a/tests/qtestlib2junitxml.xsl b/tests/qtestlib2junitxml.xsl
+deleted file mode 100644
+index aab2d0f..0000000
+--- a/tests/qtestlib2junitxml.xsl
++++ /dev/null
+@@ -1,82 +0,0 @@
+-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+-
+-<xsl:output method="xml" indent="yes" />
+-<xsl:decimal-format decimal-separator="." grouping-separator="," />
+-
+-<!-- misc variables -->
+-<xsl:variable name="classname" select="/TestCase/@name" />
+-<xsl:variable name="total-tests" select="count(/TestCase/TestFunction)" />
+-<xsl:variable name="total-failures" select="count(/TestCase/TestFunction/Incident[@type='fail'])" />
+-
+-<!-- main template call -->
+-<xsl:template match="/">
+-    <xsl:apply-templates select="TestCase"/>
+-</xsl:template>
+-
+-<xsl:template match="TestCase">
+-  <testsuite name="{$classname}" tests="{$total-tests}" failures="{$total-failures}" errors="0" time="0.0">
+-        <xsl:apply-templates select="Environment"/>
+-        <xsl:apply-templates select="TestFunction" />
+-    <xsl:call-template name="display-system-out" />
+-    <xsl:call-template name="display-system-err" />
+-    </testsuite>
+-</xsl:template>
+-
+-<xsl:template match="Environment">
+-    <properties>
+-        <xsl:for-each select="*">
+-            <property name="{name()}" value="{text()}" />
+-        </xsl:for-each>
+-    </properties>
+-</xsl:template>
+-
+-<xsl:template match="TestFunction">
+-    <testcase classname="{$classname}" name="{@name}" time="0.0">
+-        <!-- handle fail -->
+-        <xsl:if test="Incident/@type = 'fail'">
+-      <!-- will be used to generate "nice" error message -->
+-      <xsl:variable name="file" select="Incident/@file" />
+-      <xsl:variable name="line" select="Incident/@line" />
+-      <xsl:variable name="description">
+-        <xsl:value-of select="Incident/Description" />
+-      </xsl:variable>
+-
+-      <!-- display a reasonable error message -->
+-            <xsl:element name="failure">
+-                <xsl:attribute name="type">Standard</xsl:attribute>
+-                <xsl:attribute name="message">
+-          <xsl:value-of select="concat($file,':',$line,' :: ',$description)" />
+-                </xsl:attribute>
+-            </xsl:element>
+-
+-        </xsl:if>
+-
+-    <!-- handle skip -->
+-        <xsl:if test="Incident/@type = 'skip'">
+-
+-        </xsl:if>
+-    </testcase>
+-</xsl:template>
+-
+-<xsl:template name="display-system-out">
+-  <system-out>
+-    <xsl:for-each select="/TestCase/TestFunction/Incident[@type='fail'] | /TestCase/TestFunction/Message[@type='skip']">
+-      <xsl:choose>
+-        <xsl:when test="@type='fail'">
+-          <xsl:value-of select="Description"/>
+-        </xsl:when>
+-        <xsl:when test="@type='skip'">
+-          <xsl:value-of select="Description"/>
+-        </xsl:when>
+-      </xsl:choose>
+-    </xsl:for-each>
+-  </system-out>
+-</xsl:template>
+-
+-<xsl:template name="display-system-err">
+-  <!-- do nothing for now -->
+-  <system-err />
+-</xsl:template>
+-
+-</xsl:stylesheet>
+-
+diff --git a/tests/sanitychecks/sanitychecks.pro b/tests/sanitychecks/sanitychecks.pro
+deleted file mode 100644
+index dd09036..0000000
+--- a/tests/sanitychecks/sanitychecks.pro
++++ /dev/null
+@@ -1,10 +0,0 @@
+-include(../common_top.pri)
+-
+-# Input
+-HEADERS += \
+-    sanitychecks.h \
+-
+-SOURCES += \
+-    sanitychecks.cpp \
+-
+-include(../common_check.pri)
+diff --git a/tests/tests.pro b/tests/tests.pro
+deleted file mode 100644
+index e4255b2..0000000
+--- a/tests/tests.pro
++++ /dev/null
+@@ -1,32 +0,0 @@
+-include(../config.pri)
+-
+-CONFIG += ordered
+-
+-TEMPLATE = subdirs
+-
+-SUBDIRS += \
+-          dummyimplugin \
+-          dummyimplugin2 \
+-          dummyimplugin3 \
+-          dummyplugin \
+-          sanitychecks \
+-          ut_mattributeextensionmanager \
+-          ut_mkeyoverride \
+-          ft_exampleplugin \
+-          ut_mimsettings \
+-          ut_mimonscreenplugins \
+-          ut_minputmethodquickplugin \
+-          ut_mimserveroptions \
+-
+-glib {
+-          SUBDIRS += ut_maliit_glib_settings
+-}
+-
+-SUBDIRS += \
+-          ut_mimpluginmanager \
+-          ut_mimpluginmanagerconfig \
+-          ft_mimpluginmanager \
+-
+-QMAKE_EXTRA_TARGETS += check
+-check.target = check
+-check.CONFIG = recursive
+diff --git a/tests/ut_maliit_glib_settings/ut_maliit_glib_settings.pro b/tests/ut_maliit_glib_settings/ut_maliit_glib_settings.pro
+deleted file mode 100644
+index bae1e19..0000000
+--- a/tests/ut_maliit_glib_settings/ut_maliit_glib_settings.pro
++++ /dev/null
+@@ -1,15 +0,0 @@
+-include(../common_top.pri)
+-
+-CONFIG += link_pkgconfig
+-PKGCONFIG += gio-unix-2.0
+-
+-SOURCES += \
+-    ut_maliit_glib_settings.c  \
+-    mockmaliitserver.c \
+-
+-HEADERS += \
+-    mockmaliitserver.h
+-
+-include ($$TOP_DIR/maliit-glib/libmaliit-glib.pri)
+-
+-include(../common_check.pri)
+diff --git a/tests/ut_mattributeextensionmanager/ut_mattributeextensionmanager.pro b/tests/ut_mattributeextensionmanager/ut_mattributeextensionmanager.pro
+deleted file mode 100644
+index 2228088..0000000
+--- a/tests/ut_mattributeextensionmanager/ut_mattributeextensionmanager.pro
++++ /dev/null
+@@ -1,21 +0,0 @@
+-include(../common_top.pri)
+-
+-# Input
+-HEADERS += \
+-    ut_mattributeextensionmanager.h \
+-
+-SOURCES += \
+-    ut_mattributeextensionmanager.cpp \
+-
+-QT += dbus
+-CONFIG += plugin
+-
+-include($$TOP_DIR/src/libmaliit-plugins.pri)
+-include($$TOP_DIR/connection/libmaliit-connection.pri)
+-
+-target.files += \
+-    $$TARGET \
+-    toolbar1.xml \
+-    toolbar2.xml \
+-
+-include(../common_check.pri)
+diff --git a/tests/ut_mimonscreenplugins/ut_mimonscreenplugins.cpp b/tests/ut_mimonscreenplugins/ut_mimonscreenplugins.cpp
+index d7ebb4e..6900398 100644
+--- a/tests/ut_mimonscreenplugins/ut_mimonscreenplugins.cpp
++++ b/tests/ut_mimonscreenplugins/ut_mimonscreenplugins.cpp
+@@ -13,7 +13,6 @@
+ 
+ #include "ut_mimonscreenplugins.h"
+ 
+-#include "config.h"
+ #include "mimonscreenplugins.h"
+ #include "mimsettings.h"
+ #include "mimsettingsqsettings.h"
+diff --git a/tests/ut_mimonscreenplugins/ut_mimonscreenplugins.pro b/tests/ut_mimonscreenplugins/ut_mimonscreenplugins.pro
+deleted file mode 100644
+index 7f889b5..0000000
+--- a/tests/ut_mimonscreenplugins/ut_mimonscreenplugins.pro
++++ /dev/null
+@@ -1,11 +0,0 @@
+-include(../common_top.pri)
+-
+-# Input
+-HEADERS += \
+-    ut_mimonscreenplugins.h \
+-
+-SOURCES += \
+-    ut_mimonscreenplugins.cpp \
+-
+-include($$TOP_DIR/src/libmaliit-plugins.pri)
+-include(../common_check.pri)
+diff --git a/tests/ut_mimpluginmanager/ut_mimpluginmanager.pro b/tests/ut_mimpluginmanager/ut_mimpluginmanager.pro
+deleted file mode 100644
+index 19e68e6..0000000
+--- a/tests/ut_mimpluginmanager/ut_mimpluginmanager.pro
++++ /dev/null
+@@ -1,25 +0,0 @@
+-include(../common_top.pri)
+-
+-QT += gui
+-
+-INCLUDEPATH += ../stubs \
+-
+-# Input
+-HEADERS += \
+-    ut_mimpluginmanager.h \
+-
+-SOURCES += \
+-    ut_mimpluginmanager.cpp \
+-
+-include(../dummyimplugins.pri)
+-include($$TOP_DIR/src/libmaliit-plugins.pri)
+-
+-# For MImInputContextConnection pulled in by TestInputMethodHost
+-include($$TOP_DIR/connection/libmaliit-connection.pri)
+-
+-target.files += \
+-    $$TARGET \
+-    toolbar1.xml \
+-    toolbar2.xml \
+-
+-include(../common_check.pri)
+diff --git a/tests/ut_mimpluginmanagerconfig/ut_mimpluginmanagerconfig.cpp b/tests/ut_mimpluginmanagerconfig/ut_mimpluginmanagerconfig.cpp
+index 952e22a..8a469dc 100644
+--- a/tests/ut_mimpluginmanagerconfig/ut_mimpluginmanagerconfig.cpp
++++ b/tests/ut_mimpluginmanagerconfig/ut_mimpluginmanagerconfig.cpp
+@@ -13,11 +13,6 @@
+ 
+ #include "ut_mimpluginmanagerconfig.h"
+ 
+-#include "dummyimplugin.h"
+-#include "dummyimplugin3.h"
+-#include "dummyinputmethod.h"
+-#include "dummyinputmethod3.h"
+-
+ #include "minputcontextconnection.h"
+ #include "mimsettingsqsettings.h"
+ 
+diff --git a/tests/ut_mimpluginmanagerconfig/ut_mimpluginmanagerconfig.pro b/tests/ut_mimpluginmanagerconfig/ut_mimpluginmanagerconfig.pro
+deleted file mode 100644
+index 739ceef..0000000
+--- a/tests/ut_mimpluginmanagerconfig/ut_mimpluginmanagerconfig.pro
++++ /dev/null
+@@ -1,23 +0,0 @@
+-include(../common_top.pri)
+-
+-QT += gui
+-
+-INCLUDEPATH += ../stubs \
+-
+-# Input
+-HEADERS += \
+-    ut_mimpluginmanagerconfig.h \
+-
+-SOURCES += \
+-    ut_mimpluginmanagerconfig.cpp \
+-
+-include(../dummyimplugins.pri)
+-include($$TOP_DIR/src/libmaliit-plugins.pri)
+-
+-# For MImInputContextConnection pulled in by TestInputMethodHost
+-include($$TOP_DIR/connection/libmaliit-connection.pri)
+-
+-target.files += \
+-    $$TARGET \
+-
+-include(../common_check.pri)
+diff --git a/tests/ut_mimserveroptions/ut_mimserveroptions.pro b/tests/ut_mimserveroptions/ut_mimserveroptions.pro
+deleted file mode 100644
+index 440685f..0000000
+--- a/tests/ut_mimserveroptions/ut_mimserveroptions.pro
++++ /dev/null
+@@ -1,12 +0,0 @@
+-include(../common_top.pri)
+-
+-include(../../src/libmaliit-plugins.pri)
+-
+-# Input
+-HEADERS += \
+-    ut_mimserveroptions.h \
+-
+-SOURCES += \
+-    ut_mimserveroptions.cpp \
+-
+-include(../common_check.pri)
+diff --git a/tests/ut_mimsettings/ut_mimsettings.pro b/tests/ut_mimsettings/ut_mimsettings.pro
+deleted file mode 100644
+index c316734..0000000
+--- a/tests/ut_mimsettings/ut_mimsettings.pro
++++ /dev/null
+@@ -1,13 +0,0 @@
+-include(../common_top.pri)
+-
+-# Input
+-HEADERS += \
+-    ut_mimsettings.h \
+-
+-SOURCES += \
+-    ut_mimsettings.cpp \
+-
+-include($$TOP_DIR/src/libmaliit-plugins.pri)
+-include($$TOP_DIR/connection/libmaliit-connection.pri)
+-
+-include(../common_check.pri)
+diff --git a/tests/ut_minputmethodquickplugin/.gitignore b/tests/ut_minputmethodquickplugin/.gitignore
+index f92f59e..d97454a 100644
+--- a/tests/ut_minputmethodquickplugin/.gitignore
++++ b/tests/ut_minputmethodquickplugin/.gitignore
+@@ -1,2 +1 @@
+-ut_minputmethodquickplugin
+-qrc_ut_minputmethodquickplugin.cpp
++ut_minputmethodquickplugin
+\ No newline at end of file
+diff --git a/tests/ut_minputmethodquickplugin/ut_minputmethodquickplugin.pro b/tests/ut_minputmethodquickplugin/ut_minputmethodquickplugin.pro
+deleted file mode 100644
+index ad0118d..0000000
+--- a/tests/ut_minputmethodquickplugin/ut_minputmethodquickplugin.pro
++++ /dev/null
+@@ -1,22 +0,0 @@
+-include(../common_top.pri)
+-
+-QT += quick
+-
+-# For MImInputContextConnection pulled in by TestInputMethodHost
+-include($$TOP_DIR/connection/libmaliit-connection.pri)
+-
+-IN_TREE_TEST_PLUGIN_DIR = $${OUT_PWD}/../../examples/plugins
+-DEFINES += IN_TREE_TEST_PLUGIN_DIR=\\\"$${IN_TREE_TEST_PLUGIN_DIR}\\\"
+-
+-# Input
+-HEADERS += \
+-    ut_minputmethodquickplugin.h \
+-    ../utils/gui-utils.h \
+-
+-SOURCES += \
+-    ut_minputmethodquickplugin.cpp \
+-    ../utils/gui-utils.cpp \
+-
+-include($$TOP_DIR/src/libmaliit-plugins.pri)
+-
+-include(../common_check.pri)
+diff --git a/tests/ut_mkeyoverride/ut_mkeyoverride.pro b/tests/ut_mkeyoverride/ut_mkeyoverride.pro
+deleted file mode 100644
+index 237ed1d..0000000
+--- a/tests/ut_mkeyoverride/ut_mkeyoverride.pro
++++ /dev/null
+@@ -1,18 +0,0 @@
+-include(../common_top.pri)
+-
+-INCLUDEPATH += ../stubs \
+-
+-# Input
+-HEADERS += \
+-    ut_mkeyoverride.h \
+-
+-SOURCES += \
+-    ut_mkeyoverride.cpp \
+-
+-QT += dbus
+-CONFIG += plugin
+-
+-include($$TOP_DIR/src/libmaliit-plugins.pri)
+-include($$TOP_DIR/connection/libmaliit-connection.pri)
+-
+-include(../common_check.pri)
+diff --git a/weston-protocols/.gitignore b/weston-protocols/.gitignore
+deleted file mode 100644
+index 9c61a91..0000000
+--- a/weston-protocols/.gitignore
++++ /dev/null
+@@ -1,4 +0,0 @@
+-/wayland-input-method-client-protocol.h
+-/wayland-input-method-protocol.c
+-/wayland-text-client-protocol.h
+-/wayland-text-protocol.c
+diff --git a/weston-protocols/dummy.cpp b/weston-protocols/dummy.cpp
+deleted file mode 100644
+index 9b1eeff..0000000
+--- a/weston-protocols/dummy.cpp
++++ /dev/null
+@@ -1,2 +0,0 @@
+-#include "wayland-input-method-client-protocol.h"
+-#include "wayland-text-client-protocol.h"
+diff --git a/weston-protocols/libmaliit-weston-protocols.pri b/weston-protocols/libmaliit-weston-protocols.pri
+deleted file mode 100644
+index e9e7181..0000000
+--- a/weston-protocols/libmaliit-weston-protocols.pri
++++ /dev/null
+@@ -1,12 +0,0 @@
+-# Use when a .pro file requires libmaliit-weston-protocols
+-# The .pro file must define TOP_DIR to be a relative path
+-# to the top-level source/build directory, and include config.pri
+-
+-wayland {
+-    LIBS += $$TOP_DIR/lib/$$maliitStaticLib(maliit-weston-protocols)
+-    POST_TARGETDEPS += $$TOP_DIR/lib/$$maliitStaticLib(maliit-weston-protocols)
+-    INCLUDEPATH += $$TOP_DIR/weston-protocols $$OUT_PWD/$$TOP_DIR/weston-protocols
+-
+-    CONFIG += link_pkgconfig
+-    PKGCONFIG += wayland-client
+-}
+diff --git a/weston-protocols/weston-protocols.pro b/weston-protocols/weston-protocols.pro
+deleted file mode 100644
+index 13b2844..0000000
+--- a/weston-protocols/weston-protocols.pro
++++ /dev/null
+@@ -1,27 +0,0 @@
+-include(../config.pri)
+-
+-TOP_DIR = ..
+-
+-VERSION = $$MALIIT_ABI_VERSION
+-TEMPLATE = lib
+-TARGET = $$TOP_DIR/lib/maliit-weston-protocols
+-
+-CONFIG += staticlib
+-
+-wayland {
+-    load(wayland-scanner)
+-
+-    # to force generation of headers.
+-    SOURCES = dummy.cpp
+-
+-    WAYLANDCLIENTSOURCES += \
+-        $$IN_PWD/input-method.xml \
+-        $$IN_PWD/text.xml
+-    CONFIG += link_pkgconfig
+-    PKGCONFIG += wayland-client
+-}
+-
+-OTHER_FILES += \
+-    libmaliit-weston-protocols.pri \
+-    input-method.xml \
+-    text.xml

@@ -1,0 +1,22 @@
+From 1c3f38f1739608b42155fad234ad36be7e3ab932 Mon Sep 17 00:00:00 2001
+From: Jan Arne Petersen <janarne@gmail.com>
+Date: Mon, 16 Nov 2015 22:59:42 +0100
+Subject: [PATCH] Remove framework dependency from maliit-glib.pc
+
+There is no dependency on maliit-framework in maliit-glib.
+---
+ maliit-glib/maliit-glib.pc.in | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/maliit-glib/maliit-glib.pc.in b/maliit-glib/maliit-glib.pc.in
+index 87d943e..f67bf7d 100644
+--- a/maliit-glib/maliit-glib.pc.in
++++ b/maliit-glib/maliit-glib.pc.in
+@@ -6,6 +6,6 @@ includedir=@INCLUDEDIR@
+ Name: Maliit-GLib
+ Description: Maliit provides a flexible and cross platform input method framework. It is usable on all MeeGo user experiences, and in other GNU/Linux distributions as well.
+ Version: @MALIIT_VERSION@
+-Requires: maliit-framework gobject-2.0 gio-2.0
++Requires: gobject-2.0 gio-2.0
+ Cflags: -I${includedir}/@MALIIT_HEADER@
+ Libs: -L${libdir} -l@MALIIT_GLIB_LIB@
