@@ -1,0 +1,724 @@
+From 5f2fd5be93f21fc27c7b5797395d673746374c7c Mon Sep 17 00:00:00 2001
+From: Jan Arne Petersen <janarne@gmail.com>
+Date: Mon, 16 Nov 2015 01:24:34 +0100
+Subject: [PATCH] Use cmake instead of qmake as build system
+
+---
+ CMakeLists.txt                                |  68 ++++++++
+ VERSION                                       |   1 -
+ cmake/FindGTK2.cmake                          |  31 ++++
+ cmake/FindGTK3.cmake                          |  31 ++++
+ cmake/FindMaliitGLib.cmake                    |  24 +++
+ config.pri                                    | 226 --------------------------
+ defines.pri                                   |  19 ---
+ gtk-input-context/client-gtk/client-gtk.pro   |  79 ---------
+ gtk-input-context/client-gtk3/client-gtk3.pro |  83 ----------
+ gtk-input-context/gtk-input-context.pro       |  11 --
+ maliit-inputcontext-gtk.pro                   |  52 ------
+ 11 files changed, 154 insertions(+), 471 deletions(-)
+ create mode 100644 CMakeLists.txt
+ delete mode 100644 VERSION
+ create mode 100644 cmake/FindGTK2.cmake
+ create mode 100644 cmake/FindGTK3.cmake
+ create mode 100644 cmake/FindMaliitGLib.cmake
+ delete mode 100644 config.pri
+ delete mode 100644 defines.pri
+ delete mode 100644 gtk-input-context/client-gtk/client-gtk.pro
+ delete mode 100644 gtk-input-context/client-gtk3/client-gtk3.pro
+ delete mode 100644 gtk-input-context/gtk-input-context.pro
+ delete mode 100644 maliit-inputcontext-gtk.pro
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+new file mode 100644
+index 0000000..9503723
+--- /dev/null
++++ b/CMakeLists.txt
+@@ -0,0 +1,68 @@
++cmake_minimum_required(VERSION 3.1)
++
++project(maliit-inputcontext-gtk VERSION 0.99.1)
++
++list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
++
++option(ENABLE_X11 "Compile with X11 support" OFF)
++option(ENABLE_GTK2 "Build input method for Gtk+ 2" ON)
++option(ENABLE_GTK3 "Build input method for Gtk+ 3" ON)
++
++if(NOT DEFINED LIB_INSTALL_DIR)
++    set(LIB_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/lib)
++endif()
++
++add_definitions(-DG_LOG_DOMAIN="Maliit")
++
++if(ENABLE_X11)
++    add_definitions(-DHAVE_X11)
++endif()
++
++find_package(Qt5Gui REQUIRED)
++find_package(MaliitGLib REQUIRED)
++
++if(ENABLE_GTK2)
++    find_package(GTK2 REQUIRED)
++
++    set(SOURCE_FILES
++        gtk-input-context/client-gtk/client-imcontext-gtk.c
++        gtk-input-context/client-gtk/client-imcontext-gtk.h
++        gtk-input-context/client-gtk/debug.c
++        gtk-input-context/client-gtk/debug.h
++        gtk-input-context/client-gtk/gtk-imcontext-plugin.c
++        gtk-input-context/client-gtk/qt-gtk-translate.cpp
++        gtk-input-context/client-gtk/qt-gtk-translate.h
++        gtk-input-context/client-gtk/qt-keysym-map.cpp
++        gtk-input-context/client-gtk/qt-keysym-map.h)
++
++    add_library(im-maliit2 MODULE ${SOURCE_FILES})
++    target_link_libraries(im-maliit2 PRIVATE Gtk2::Gtk Qt5::Gui Maliit::GLib)
++    set_property(TARGET im-maliit2 PROPERTY OUTPUT_NAME im-maliit)
++    set_property(TARGET im-maliit2 PROPERTY PREFIX "")
++    set_property(TARGET im-maliit2 PROPERTY LIBRARY_OUTPUT_DIRECTORY gtk-2.0)
++    install(TARGETS im-maliit2
++            LIBRARY DESTINATION ${LIB_INSTALL_DIR}/gtk-2.0/${GTK2_BINARY_VERSION}/immodules)
++endif()
++
++if(ENABLE_GTK3)
++    find_package(GTK3 REQUIRED)
++
++    set(SOURCE_FILES
++            gtk-input-context/client-gtk/client-imcontext-gtk.c
++            gtk-input-context/client-gtk/client-imcontext-gtk.h
++            gtk-input-context/client-gtk/debug.c
++            gtk-input-context/client-gtk/debug.h
++            gtk-input-context/client-gtk/gtk-imcontext-plugin.c
++            gtk-input-context/client-gtk/qt-gtk-translate.cpp
++            gtk-input-context/client-gtk/qt-gtk-translate.h
++            gtk-input-context/client-gtk/qt-keysym-map.cpp
++            gtk-input-context/client-gtk/qt-keysym-map.h)
++
++    add_library(im-maliit3 MODULE ${SOURCE_FILES})
++    target_link_libraries(im-maliit3 PRIVATE Gtk3::Gtk Qt5::Gui Maliit::GLib)
++    set_property(TARGET im-maliit3 PROPERTY OUTPUT_NAME im-maliit)
++    set_property(TARGET im-maliit3 PROPERTY PREFIX "")
++    set_property(TARGET im-maliit3 PROPERTY LIBRARY_OUTPUT_DIRECTORY gtk-3.0)
++    install(TARGETS im-maliit3
++            LIBRARY DESTINATION ${LIB_INSTALL_DIR}/gtk-3.0/${GTK3_BINARY_VERSION}/immodules)
++endif()
+diff --git a/VERSION b/VERSION
+deleted file mode 100644
+index 626c498..0000000
+--- a/VERSION
++++ /dev/null
+@@ -1 +0,0 @@
+-0.99.1
+diff --git a/cmake/FindGTK2.cmake b/cmake/FindGTK2.cmake
+new file mode 100644
+index 0000000..179a837
+--- /dev/null
++++ b/cmake/FindGTK2.cmake
+@@ -0,0 +1,31 @@
++find_package(PkgConfig)
++pkg_check_modules(PC_GTK2 gtk+-2.0 QUIET)
++
++set(GTK2_DEFINITIONS ${PC_GTK2_CFLAGS_OTHER})
++set(GTK2_INCLUDE_DIRS ${PC_GTK2_INCLUDE_DIRS})
++
++foreach(COMP ${PC_GTK2_LIBRARIES})
++    find_library(GTK2_${COMP} NAMES ${COMP} HINTS ${PC_GTK2_LIBRARY_DIRS})
++    list(APPEND GTK2_LIBRARIES ${GTK2_${COMP}})
++endforeach()
++
++execute_process(COMMAND ${PKG_CONFIG_EXECUTABLE} --variable gtk_binary_version gtk+-2.0
++                OUTPUT_VARIABLE GTK2_BINARY_VERSION)
++
++string(REGEX REPLACE "[\r\n]" " " GTK2_BINARY_VERSION "${GTK2_BINARY_VERSION}")
++string(REGEX REPLACE " +$" "" GTK2_BINARY_VERSION "${GTK2_BINARY_VERSION}")
++
++# handle the QUIETLY and REQUIRED arguments and set GTK2_FOUND to TRUE if
++# all listed variables are TRUE
++include(FindPackageHandleStandardArgs)
++find_package_handle_standard_args(GTK2 DEFAULT_MSG GTK2_LIBRARIES GTK2_INCLUDE_DIRS)
++
++mark_as_advanced(GTK2_DEFINITIONS GTK2_INCLUDE_DIRS GTK2_LIBRARIES GTK2_BINARY_VERSION)
++
++if(PC_GTK2_FOUND AND NOT TARGET Gtk2::Gtk)
++    add_library(Gtk2::Gtk INTERFACE IMPORTED)
++
++    set_property(TARGET Gtk2::Gtk PROPERTY INTERFACE_COMPILE_OPTIONS "-pthread")
++    set_property(TARGET Gtk2::Gtk PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${GTK2_INCLUDE_DIRS})
++    set_property(TARGET Gtk2::Gtk PROPERTY INTERFACE_LINK_LIBRARIES ${GTK2_LIBRARIES})
++endif()
+\ No newline at end of file
+diff --git a/cmake/FindGTK3.cmake b/cmake/FindGTK3.cmake
+new file mode 100644
+index 0000000..0691300
+--- /dev/null
++++ b/cmake/FindGTK3.cmake
+@@ -0,0 +1,31 @@
++find_package(PkgConfig)
++pkg_check_modules(PC_GTK3 gtk+-3.0 QUIET)
++
++set(GTK3_DEFINITIONS ${PC_GTK3_CFLAGS_OTHER})
++set(GTK3_INCLUDE_DIRS ${PC_GTK3_INCLUDE_DIRS})
++
++foreach(COMP ${PC_GTK3_LIBRARIES})
++    find_library(GTK3_${COMP} NAMES ${COMP} HINTS ${PC_GTK3_LIBRARY_DIRS})
++    list(APPEND GTK3_LIBRARIES ${GTK3_${COMP}})
++endforeach()
++
++execute_process(COMMAND ${PKG_CONFIG_EXECUTABLE} --variable gtk_binary_version gtk+-3.0
++        OUTPUT_VARIABLE GTK3_BINARY_VERSION)
++
++string(REGEX REPLACE "[\r\n]" " " GTK3_BINARY_VERSION "${GTK3_BINARY_VERSION}")
++string(REGEX REPLACE " +$" "" GTK3_BINARY_VERSION "${GTK3_BINARY_VERSION}")
++
++# handle the QUIETLY and REQUIRED arguments and set GTK3_FOUND to TRUE if
++# all listed variables are TRUE
++include(FindPackageHandleStandardArgs)
++find_package_handle_standard_args(GTK3 DEFAULT_MSG GTK3_LIBRARIES GTK3_INCLUDE_DIRS)
++
++mark_as_advanced(GTK3_DEFINITIONS GTK3_INCLUDE_DIRS GTK3_LIBRARIES GTK3_BINARY_VERSION)
++
++if(PC_GTK3_FOUND AND NOT TARGET Gtk3::Gtk)
++    add_library(Gtk3::Gtk INTERFACE IMPORTED)
++
++    set_property(TARGET Gtk3::Gtk PROPERTY INTERFACE_COMPILE_OPTIONS "-pthread")
++    set_property(TARGET Gtk3::Gtk PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${GTK3_INCLUDE_DIRS})
++    set_property(TARGET Gtk3::Gtk PROPERTY INTERFACE_LINK_LIBRARIES ${GTK3_LIBRARIES})
++endif()
+\ No newline at end of file
+diff --git a/cmake/FindMaliitGLib.cmake b/cmake/FindMaliitGLib.cmake
+new file mode 100644
+index 0000000..2cc3b4b
+--- /dev/null
++++ b/cmake/FindMaliitGLib.cmake
+@@ -0,0 +1,24 @@
++find_package(PkgConfig)
++pkg_check_modules(PC_MALIIT_GLIB maliit-glib QUIET)
++
++set(MALIIT_GLIB_DEFINITIONS ${PC_MALIIT_GLIB_CFLAGS_OTHER})
++set(MALIIT_GLIB_INCLUDE_DIRS ${PC_MALIIT_GLIB_INCLUDE_DIRS})
++
++foreach(COMP ${PC_MALIIT_GLIB_LIBRARIES})
++    find_library(MALIIT_GLIB_${COMP} NAMES ${COMP} HINTS ${PC_MALIIT_GLIB_LIBRARY_DIRS})
++    list(APPEND MALIIT_GLIB_LIBRARIES ${MALIIT_GLIB_${COMP}})
++endforeach()
++
++# handle the QUIETLY and REQUIRED arguments and set MALIIT_GLIB_FOUND to TRUE if
++# all listed variables are TRUE
++include(FindPackageHandleStandardArgs)
++find_package_handle_standard_args(MALIIT_GLIB DEFAULT_MSG MALIIT_GLIB_LIBRARIES MALIIT_GLIB_INCLUDE_DIRS)
++
++mark_as_advanced(MALIIT_GLIB_INCLUDE_DIRS MALIIT_GLIB_LIBRARIES)
++
++if(PC_MALIIT_GLIB_FOUND AND NOT TARGET Maliit::GLib)
++    add_library(Maliit::GLib INTERFACE IMPORTED)
++
++    set_property(TARGET Maliit::GLib PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${MALIIT_GLIB_INCLUDE_DIRS})
++    set_property(TARGET Maliit::GLib PROPERTY INTERFACE_LINK_LIBRARIES ${MALIIT_GLIB_LIBRARIES})
++endif()
+\ No newline at end of file
+diff --git a/config.pri b/config.pri
+deleted file mode 100644
+index 365d872..0000000
+--- a/config.pri
++++ /dev/null
+@@ -1,226 +0,0 @@
+-MALIIT_VERSION = $$system(cat $$PWD/VERSION)
+-
+-MALIIT_INTERFACE_VERSION = 1.0
+-MALIIT_PLUGINS_INTERFACE_VERSION = 1.0
+-MALIIT_PLUGINS_QUICK_INTERFACE_VERSION = 0.80
+-MALIIT_FRAMEWORK_INTERFACE_VERSION = 0.80
+-MALIIT_CONNECTION_INTERFACE_VERSION = 0.80
+-MALIIT_SERVER_INTERFACE_VERSION = 0.80
+-MALIIT_ABI_VERSION = $$MALIIT_VERSION
+-
+-# For libmaliit
+-MALIIT_LIB = maliit
+-MALIIT_SETTINGS_LIB = maliit-settings
+-MALIIT_HEADER = maliit
+-MALIIT_FRAMEWORK_HEADER = maliit/framework
+-
+-include(defines.pri)
+-
+-# Linker optimization for release build
+-QMAKE_LFLAGS_RELEASE+=-Wl,--as-needed
+-# Compiler warnings are error if the build type is debug
+-QMAKE_CXXFLAGS_DEBUG+=-Werror -O0
+-QMAKE_CFLAGS_DEBUG+=-Werror -O0
+-
+-OBJECTS_DIR = .obj
+-MOC_DIR = .moc
+-
+-isEmpty(MALIIT_VERSION) {
+-    MALIIT_VERSION=$$MALIIT_VERSION
+-}
+-
+-isEmpty(PREFIX) {
+-    PREFIX = /usr
+-}
+-isEmpty(BINDIR) {
+-    BINDIR = $$PREFIX/bin
+-}
+-isEmpty(LIBDIR) {
+-    LIBDIR = $$PREFIX/lib
+-}
+-isEmpty(INCLUDEDIR) {
+-    INCLUDEDIR = $$PREFIX/include
+-}
+-DATADIR = $$PREFIX/share
+-
+-isEmpty(DOCDIR) {
+-    DOCDIR = $$DATADIR/doc
+-}
+-
+-isEmpty(MALIIT_PLUGINS_DIR) {
+-    MALIIT_PLUGINS_DIR = $$LIBDIR/$$MALIIT_PLUGINS
+-}
+-DEFINES += MALIIT_PLUGINS_DIR=\\\"$$MALIIT_PLUGINS_DIR\\\"
+-
+-isEmpty(MALIIT_PLUGINS_DATA_DIR) {
+-    MALIIT_PLUGINS_DATA_DIR = $$DATADIR/$$MALIIT_PLUGINS_DATA
+-}
+-DEFINES += MALIIT_PLUGINS_DATA_DIR=\\\"$$MALIIT_PLUGINS_DATA_DIR\\\"
+-
+-isEmpty(MALIIT_FACTORY_PLUGINS_DIR) {
+-    MALIIT_FACTORY_PLUGINS_DIR = $$MALIIT_PLUGINS_DIR/factories
+-}
+-DEFINES += MALIIT_FACTORY_PLUGINS_DIR=\\\"$$MALIIT_FACTORY_PLUGINS_DIR\\\"
+-
+-isEmpty(MALIIT_ENABLE_MULTITOUCH) {
+-
+-    MALIIT_ENABLE_MULTITOUCH=true
+-}
+-
+-MALIIT_EXTENSIONS_DIR = $$DATADIR/$$MALIIT_ATTRIBUTE_EXTENSIONS/
+-DEFINES += MALIIT_EXTENSIONS_DIR=\\\"$$MALIIT_EXTENSIONS_DIR\\\"
+-
+-isEmpty(MALIIT_DEFAULT_HW_PLUGIN) {
+-    MALIIT_DEFAULT_HW_PLUGIN = libmaliit-keyboard-plugin.so
+-}
+-
+-isEmpty(MALIIT_DEFAULT_PLUGIN) {
+-    MALIIT_DEFAULT_PLUGIN = libmaliit-keyboard-plugin.so
+-}
+-
+-DEFINES += MALIIT_CONFIG_ROOT=\\\"$$MALIIT_CONFIG_ROOT\\\"
+-
+-DEFINES += MALIIT_FRAMEWORK_USE_INTERNAL_API
+-
+-# Do not define keywords signals, slots, emit and foreach because of
+-# conflicts with 3rd party libraries.
+-CONFIG += no_keywords
+-
+-unix {
+-    MALIIT_STATIC_PREFIX=lib
+-    MALIIT_STATIC_SUFFIX=.a
+-    MALIIT_DYNAMIC_PREFIX=lib
+-    MALIIT_DYNAMIC_SUFFIX=.so
+-    MALIIT_ABI_VERSION_MAJOR=
+-}
+-
+-win32 {
+-    # qmake puts libraries in subfolders in build tree on Windows (installation is unaffected)
+-    release {
+-        MALIIT_STATIC_PREFIX=release/lib
+-        MALIIT_DYNAMIC_PREFIX=release/
+-    }
+-    debug {
+-        MALIIT_STATIC_PREFIX=debug/lib
+-        MALIIT_DYNAMIC_PREFIX=debug/
+-    }
+-
+-    # one would suspect this to be .lib, but qmake with mingw uses .a
+-    MALIIT_STATIC_SUFFIX=.a
+-
+-    # qmake adds the first component of the version as part of the DLL name on Windows
+-    MALIIT_ABI_VERSIONS=$$split(MALIIT_ABI_VERSION, ".")
+-    MALIIT_ABI_VERSION_MAJOR=$$member(MALIIT_ABI_VERSIONS, 0)
+-    MALIIT_DYNAMIC_SUFFIX=$${MALIIT_ABI_VERSION_MAJOR}.dll
+-}
+-
+-defineReplace(maliitStaticLib) {
+-    return($${MALIIT_STATIC_PREFIX}$${1}$${MALIIT_STATIC_SUFFIX})
+-}
+-
+-defineReplace(maliitDynamicLib) {
+-    return($${MALIIT_DYNAMIC_PREFIX}$${1}$${MALIIT_DYNAMIC_SUFFIX})
+-}
+-
+-mac {
+-    # Do mac stuff here
+-    M_BUILD_FEATURES = debug
+-    M_PROFILE_PARTS =
+-    INCLUDEPATH += include/
+-}
+-
+-contains(QT_CONFIG,embedded) {
+-    CONFIG += qws
+-}
+-
+-# Use x11 on unix systems without lighthouse (qpa) or QWS (qws)
+-unix:!qpa:!qws {
+-    CONFIG += x11
+-}
+-
+-contains(QT_MAJOR_VERSION, 4) {
+-    QT_WIDGETS = gui
+-} else {
+-    QT_WIDGETS = gui widgets
+-
+-    wayland {
+-        DEFINES += HAVE_WAYLAND
+-    }
+-}
+-
+-MALIIT_INSTALL_PRF = $$[QT_INSTALL_DATA]/mkspecs/features
+-local-install {
+-    MALIIT_INSTALL_PRF = $$replace(MALIIT_INSTALL_PRF, $$[QT_INSTALL_PREFIX], $$PREFIX)
+-}
+-
+-defineTest(outputFile) {
+-    out = $$OUT_PWD/$$1
+-    in = $$PWD/$${1}.in
+-
+-    !exists($$in) {
+-        error($$in does not exist!)
+-        return(false)
+-    }
+-
+-    MALIIT_IN_DIR = $$PWD
+-    MALIIT_OUT_DIR = $$OUT_PWD
+-
+-    variables = MALIIT_FRAMEWORK_FEATURE \
+-                PREFIX \
+-                BINDIR \
+-                INCLUDEDIR \
+-                LIBDIR \
+-                DOCDIR \
+-                MALIIT_PLUGINS_DIR \
+-                MALIIT_PLUGINS_DATA_DIR \
+-                MALIIT_FACTORY_PLUGINS_DIR \
+-                MALIIT_VERSION \
+-                MALIIT_ENABLE_MULTITOUCH \
+-                MALIIT_DEFAULT_HW_PLUGIN \
+-                MALIIT_DEFAULT_PLUGIN \
+-                MALIIT_QUICK_FEATURE \
+-                MALIIT_PLUGINS_LIB \
+-                MALIIT_PLUGINS_HEADER \
+-                MALIIT_LIB \
+-                MALIIT_HEADER \
+-                MALIIT_PLUGINS_QUICK_LIB \
+-                MALIIT_PLUGINS_QUICK_HEADER \
+-                MALIIT_PLUGINS_QUICK_FACTORY \
+-                MALIIT_SETTINGS_LIB \
+-                MALIIT_IN_DIR \
+-                MALIIT_OUT_DIR \
+-                MALIIT_PACKAGENAME \
+-                MALIIT_PACKAGE_BRIEF \
+-                MALIIT_FRAMEWORK_HEADER \
+-                MALIIT_SERVER_ARGUMENTS \
+-                MALIIT_CONNECTION_HEADER \
+-                MALIIT_CONNECTION_LIB \
+-                MALIIT_SERVER_HEADER \
+-                MALIIT_ABI_VERSION_MAJOR \
+-
+-    command = "sed"
+-    for(var, variables) {
+-       command += "-e \"s;@$$var@;$$eval($$var);g\""
+-    }
+-    command += $$in > $$out
+-
+-    system(mkdir -p $$dirname(out))
+-    system($$command)
+-    system(chmod --reference=$$in $$out)
+-
+-    QMAKE_DISTCLEAN += $$1
+-
+-    export(QMAKE_DISTCLEAN)
+-
+-    return(true)
+-}
+-
+-defineTest(outputFiles) {
+-    files = $$ARGS
+-
+-    for(file, files) {
+-        !outputFile($$file):return(false)
+-    }
+-
+-    return(true)
+-}
+diff --git a/defines.pri b/defines.pri
+deleted file mode 100644
+index 43f7d96..0000000
+--- a/defines.pri
++++ /dev/null
+@@ -1,19 +0,0 @@
+-MALIIT_PLUGINS = maliit/plugins
+-MALIIT_PLUGINS_DATA = maliit/plugins
+-MALIIT_SERVER = maliit-server
+-MALIIT_PLUGINS_LIB = maliit-plugins
+-MALIIT_PLUGINS_QUICK_LIB = maliit-plugins-quick
+-MALIIT_PLUGINS_HEADER = maliit/plugins
+-MALIIT_PLUGINS_QUICK_HEADER = maliit/plugins-quick
+-MALIIT_PLUGINS_QUICK_FACTORY = maliit-plugins-quick-factory
+-MALIIT_SERVER_HEADER = maliit/server
+-MALIIT_PACKAGENAME = maliit-inputcontext-gtk
+-MALIIT_PACKAGE_BRIEF = Maliit Framework
+-MALIIT_ATTRIBUTE_EXTENSIONS = $${MALIIT_PACKAGENAME}/extensions
+-MALIIT_CONFIG_ROOT = /maliit/
+-MALIIT_INPUTCONTEXT_NAME = Maliit
+-MALIIT_INPUTCONTEXT_TARGETNAME = maliit-inputcontext-qt4
+-MALIIT_INPUTCONTEXTPLUGIN_TARGETNAME = maliit-qt4
+-MALIIT_DIRECTINPUTCONTEXTPLUGIN_TARGETNAME = maliit-direct-qt4
+-MALIIT_CONNECTION_LIB = maliit-connection
+-MALIIT_CONNECTION_HEADER = maliit/connection
+diff --git a/gtk-input-context/client-gtk/client-gtk.pro b/gtk-input-context/client-gtk/client-gtk.pro
+deleted file mode 100644
+index 9ff76af..0000000
+--- a/gtk-input-context/client-gtk/client-gtk.pro
++++ /dev/null
+@@ -1,79 +0,0 @@
+-TOP_DIR = ../..
+-
+-include($$TOP_DIR/config.pri)
+-
+-TEMPLATE = lib
+-TARGET = im-maliit
+-CONFIG += plugin
+-
+-CONFIG += link_pkgconfig
+-PKGCONFIG += gtk+-2.0 maliit-glib
+-
+-QMAKE_CXXFLAGS_DEBUG+=-Wno-error=deprecated-declarations
+-QMAKE_CFLAGS_DEBUG+=-Wno-error=deprecated-declarations
+-
+-DEFINES += G_LOG_DOMAIN=\\\"Maliit\\\"
+-
+-x11 {
+-    DEFINES += HAVE_X11
+-}
+-
+-HEADERS += \
+-    ../client-gtk/client-imcontext-gtk.h \
+-    ../client-gtk/qt-gtk-translate.h \
+-    ../client-gtk/qt-keysym-map.h \
+-    ../client-gtk/debug.h \
+-
+-SOURCES += \
+-    ../client-gtk/gtk-imcontext-plugin.c \
+-    ../client-gtk/client-imcontext-gtk.c \
+-    ../client-gtk/qt-gtk-translate.cpp \
+-    ../client-gtk/qt-keysym-map.cpp \
+-    ../client-gtk/debug.c \
+-
+-GTK2_IM_LIBDIR = $$system(pkg-config --variable=libdir gtk+-2.0)
+-GTK2_PREFIX = $$system(pkg-config --variable prefix gtk+-2.0)
+-local-install {
+-    GTK2_IM_LIBDIR = $$replace(GTK2_IM_LIBDIR, $$GTK2_PREFIX, $$PREFIX)
+-}
+-
+-GTK2_BINARY_VERSION = $$system(pkg-config --variable=gtk_binary_version gtk+-2.0)
+-GTK2_DIR = $$GTK2_IM_LIBDIR/gtk-2.0/$$GTK2_BINARY_VERSION
+-GTK2_IM_MODULEDIR = $$GTK2_DIR/immodules
+-
+-target.path += $$GTK2_IM_MODULEDIR
+-
+-INSTALLS += target
+-
+-!disable-gtk-cache-update {
+-    # need to make sure dynamic linker can find maliit libraries when running gtk-query-module
+-    ldconfig.extra = ldconfig
+-    ldconfig.path = . # dummy path
+-    INSTALLS += ldconfig
+-
+-    DISTRO = $$system(lsb_release -s -i)
+-    DISTRO_VERSION = $$system(lsb_release -s -r)
+-
+-    isEqual(DISTRO, Ubuntu) {
+-        QUERY_IM_BIN = gtk-query-immodules-2.0
+-
+-        greaterThan(DISTRO_VERSION, 11) {
+-            QUERY_IM_BIN = $$GTK2_IM_LIBDIR/libgtk2.0-0/gtk-query-immodules-2.0
+-        }
+-
+-        update-im-cache.path = $$GTK2_DIR/
+-        update-im-cache.extra = $$QUERY_IM_BIN > $$GTK2_DIR/gtk.immodules
+-        update-im-cache.uninstall = $$QUERY_IM_BIN > $$GTK2_DIR/gtk.immodules
+-
+-        INSTALLS *= update-im-cache
+-    }
+-
+-    HOST = $$system(pkg-config --variable gtk_host gtk+-2.0)
+-    system(test -e /etc/fedora-release) {
+-        update-im-cache.path = $$GTK2_DIR/
+-        update-im-cache.extra = update-gtk-immodules $$HOST
+-        update-im-cache.uninstall = update-gtk-immodules $$HOST
+-
+-        INSTALLS *= update-im-cache
+-    }
+-}
+diff --git a/gtk-input-context/client-gtk3/client-gtk3.pro b/gtk-input-context/client-gtk3/client-gtk3.pro
+deleted file mode 100644
+index 90084d1..0000000
+--- a/gtk-input-context/client-gtk3/client-gtk3.pro
++++ /dev/null
+@@ -1,83 +0,0 @@
+-TOP_DIR = ../..
+-
+-include($$TOP_DIR/config.pri)
+-
+-TEMPLATE = lib
+-TARGET = im-maliit
+-CONFIG += plugin
+-
+-CONFIG += link_pkgconfig
+-PKGCONFIG += gtk+-3.0 maliit-glib
+-
+-QMAKE_CXXFLAGS_DEBUG+=-Wno-error=deprecated-declarations
+-QMAKE_CFLAGS_DEBUG+=-Wno-error=deprecated-declarations
+-
+-DEFINES += G_LOG_DOMAIN=\\\"Maliit\\\"
+-
+-x11 {
+-    DEFINES += HAVE_X11
+-}
+-
+-HEADERS += \
+-    ../client-gtk/client-imcontext-gtk.h \
+-    ../client-gtk/qt-gtk-translate.h \
+-    ../client-gtk/qt-keysym-map.h \
+-    ../client-gtk/debug.h \
+-
+-SOURCES += \
+-    ../client-gtk/gtk-imcontext-plugin.c \
+-    ../client-gtk/client-imcontext-gtk.c \
+-    ../client-gtk/qt-gtk-translate.cpp \
+-    ../client-gtk/qt-keysym-map.cpp \
+-    ../client-gtk/debug.c \
+-
+-GTK3_IM_LIBDIR = $$system(pkg-config --variable=libdir gtk+-3.0)
+-GTK3_PREFIX = $$system(pkg-config --variable prefix gtk+-3.0)
+-local-install {
+-    GTK3_IM_LIBDIR = $$replace(GTK3_IM_LIBDIR, $$GTK3_PREFIX, $$PREFIX)
+-}
+-
+-GTK3_BINARY_VERSION = $$system(pkg-config --variable=gtk_binary_version gtk+-3.0)
+-GTK3_DIR = $$GTK3_IM_LIBDIR/gtk-3.0/$$GTK3_BINARY_VERSION
+-GTK3_IM_MODULEDIR = $$GTK3_DIR/immodules
+-
+-target.path += $$GTK3_IM_MODULEDIR
+-
+-INSTALLS += target
+-
+-!disable-gtk-cache-update {
+-    # need to make sure dynamic linker can find maliit libraries when running gtk-query-module
+-    ldconfig.extra = ldconfig
+-    ldconfig.path = . # dummy path
+-    INSTALLS += ldconfig
+-
+-    DISTRO = $$system(lsb_release -s -i)
+-    DISTRO_VERSION = $$system(lsb_release -s -r)
+-
+-    isEqual(DISTRO, Ubuntu) {
+-        QUERY_IM_BIN = gtk-query-immodules-3.0
+-        greaterThan(DISTRO_VERSION, 11) {
+-            QUERY_IM_BIN = $$GTK3_IM_LIBDIR/libgtk-3-0/gtk-query-immodules-3.0
+-        }
+-
+-        update-im-cache.path = $$GTK3_DIR/
+-        update-im-cache.extra = $$QUERY_IM_BIN > $$GTK3_DIR/gtk.immodules
+-        update-im-cache.uninstall = $$QUERY_IM_BIN > $$GTK3_DIR/gtk.immodules
+-
+-        INSTALLS *= update-im-cache
+-    }
+-
+-    system(test -e /etc/fedora-release) {
+-        update-im-cache.path = $$GTK3_DIR/
+-        64bit = $$find(GTK3_IM_LIBDIR, lib64)
+-        !isEmpty(64bit) {
+-            update-im-cache.extra = gtk-query-immodules-3.0-64 --update-cache
+-            update-im-cache.uninstall = gtk-query-immodules-3.0-64 --update-cache
+-        } else {
+-            update-im-cache.extra = gtk-query-immodules-3.0-32 --update-cache
+-            update-im-cache.uninstall = gtk-query-immodules-3.0-32 --update-cache
+-        }
+-
+-        INSTALLS *= update-im-cache
+-    }
+-}
+diff --git a/gtk-input-context/gtk-input-context.pro b/gtk-input-context/gtk-input-context.pro
+deleted file mode 100644
+index 0a0f11b..0000000
+--- a/gtk-input-context/gtk-input-context.pro
++++ /dev/null
+@@ -1,11 +0,0 @@
+-include(../config.pri)
+-
+-TEMPLATE = subdirs
+-
+-system(pkg-config gtk+-2.0) {
+-    SUBDIRS += client-gtk
+-}
+-
+-system(pkg-config gtk+-3.0) {
+-    SUBDIRS += client-gtk3
+-}
+diff --git a/maliit-inputcontext-gtk.pro b/maliit-inputcontext-gtk.pro
+deleted file mode 100644
+index 60cd322..0000000
+--- a/maliit-inputcontext-gtk.pro
++++ /dev/null
+@@ -1,52 +0,0 @@
+-include(./config.pri)
+-
+-!isEmpty(HELP) {
+-    # Output help
+-    help_string = \
+-        Important build options: \
+-        \\n\\t PREFIX : Install prefix (default: /usr) \
+-        \\n\\t {BIN,LIB,INCLUDE,DOC}DIR : Install prefix for specific types of files \
+-        \\nRecognised CONFIG flags: \
+-        \\n\\t x11 : Compile with X11 support \
+-        \\n\\t disable-gtk-cache-update : Do not update GTK2/3 input method caches (used for packaging) \
+-        \\n\\t local-install : Install everything underneath PREFIX, nothing to system directories reported by GTK+, Qt, DBus etc. \
+-        \\nInfluential environment variables: \
+-        \\n\\t PKG_CONFIG_PATH : Override standard directories to look for pkg-config information \
+-        \\nExamples: \
+-        \\n\\t qmake \
+-        \\n\\t qmake PREFIX=/usr LIBDIR=/usr/lib64 CONFIG+=disable-gtk-cache-update \
+-        \\n\\t qmake PREFIX=/usr MALIIT_DEFAULT_PLUGIN=libmykeyboard.so
+-
+-    !build_pass:system(echo -e \"$$help_string\")
+-} else {
+-    config_string = Tip: Run qmake HELP=1 for a list of all supported build options
+-
+-    !build_pass:system(echo -e \"$$config_string\")
+-}
+-
+-CONFIG += ordered
+-TEMPLATE = subdirs
+-
+-SUBDIRS = gtk-input-context
+-
+-QMAKE_EXTRA_TARGETS += check-xml
+-check-xml.target = check-xml
+-check-xml.CONFIG = recursive
+-
+-QMAKE_EXTRA_TARGETS += check
+-check.target = check
+-check.CONFIG = recursive
+-
+-DIST_NAME = $$MALIIT_PACKAGENAME-$$MALIIT_VERSION
+-DIST_PATH = $$OUT_PWD/$$DIST_NAME
+-TARBALL_SUFFIX = .tar.bz2
+-TARBALL_PATH = $$DIST_PATH$$TARBALL_SUFFIX
+-
+-# The 'make dist' target
+-# Creates a tarball
+-QMAKE_EXTRA_TARGETS += release
+-release.target = release
+-release.commands += git archive HEAD --prefix=$$DIST_NAME/ | bzip2 > $$TARBALL_PATH;
+-release.commands += md5sum $$TARBALL_PATH | cut -d \' \' -f 1 > $$DIST_PATH\\.md5
+-
+-OTHER_FILES += NEWS README INSTALL.local
