@@ -13,7 +13,7 @@ SRC_URI="https://github.com/maliit/framework/archive/${PV}.tar.gz -> ${PF}.tar.g
 LICENSE="LGPL-2.1"
 SLOT="0"
 KEYWORDS="~amd64 ~arm ~x86"
-IUSE="+dbus doc +xcb wayland"
+IUSE="+dbus doc qt5-inputcontext +xcb wayland"
 
 DEPEND="app-doc/doxygen
 	dbus? ( sys-apps/dbus )
@@ -40,6 +40,7 @@ src_configure() {
 	local mycmakeargs=(
 		$(cmake-utils_use dbus enable-dbus-activation)
 		$(cmake-utils_use doc enable-docs)
+		$(cmake-utils_use qt5-inputcontext enable-qt5-inputcontext)
 		$(cmake-utils_use wayland enable-wayland)
 		$(cmake-utils_use xcb enable-xcb)
 	)
