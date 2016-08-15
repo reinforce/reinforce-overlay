@@ -66,7 +66,7 @@ src_install() {
 	doexe script/*
 
 	insinto "/var/lib/${PN}"
-	doins -r data lib lock public templates tmp "${PN}.conf" "${PN}_image.png"
+	doins -r data lib lock public templates tmp "${PN}.conf" "${PN}_01.png"
 
 	dodir "/var/log/${PN}"
 	dosym "../../log/${PN}" "/var/lib/${PN}/log"
